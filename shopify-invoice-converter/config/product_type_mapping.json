@@ -1,0 +1,15 @@
+{
+  "_comment": "Table de correspondance type_key -> Product Type Shopify EXACT (orthographe/accents inclus). Une valeur vide laisse le champ Type vide ET déclenche une alerte : complétez-la avec votre table officielle.",
+  "wallet": "Porte Feuille",
+  "deck": "",
+  "wheels": "",
+  "tee": "",
+  "hoodie": "",
+  "jacket": "",
+  "pants": "",
+  "shorts": "",
+  "cap": "",
+  "beanie": "",
+  "belt": "",
+  "bag": ""
+}

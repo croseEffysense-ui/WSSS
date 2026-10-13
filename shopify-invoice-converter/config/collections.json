@@ -1,0 +1,5 @@
+{
+  "_comment": "Liste blanche fermée des collections autorisées (orthographe exacte). by_type_key associe un type détecté à une collection de la liste blanche.",
+  "allowed": [],
+  "by_type_key": {}
+}
