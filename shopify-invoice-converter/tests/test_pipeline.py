@@ -94,3 +94,36 @@ def test_save_json_roundtrip(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "CONFIG_DIR", tmp_path)
     config.save_json("x.json", {"a": "é"})
     assert config.load_json("x.json") == {"a": "é"}
+
+
+def test_detect_profile_picks_best_format():
+    from converter.pdf_parser import detect_profile
+    name, items = detect_profile(SAMPLE, PROFILES)
+    assert name.startswith("BL complet") and len(items) == 4
+    po_text = "AB-CD-1 Tee 5 10,00\nAB-CD-2 Cap 3 12,00\n"
+    name, items = detect_profile(po_text, PROFILES)
+    assert name.startswith("Bon de commande") and items[0].qty == 5
+
+
+def test_config_health():
+    from converter.config import config_health
+    issues = config_health(RULES, MAPPING, COLL)
+    assert any("sans Product Type" in i for i in issues)
+    assert config_health({"brands": ["A"], "product_types": []}, {}, {"allowed": ["X"]}) == []
+
+
+def test_reconcile_rows():
+    po = parse_text("AB-CD-1 x 5 1\nAB-CD-2 y 3 1\n", PROFILES["Bon de commande (Qté, PU)"])
+    bl = parse_text("AB-CD-1 x 4 1\nAB-CD-9 z 1 1\n", PROFILES["Bon de commande (Qté, PU)"])
+    statuses = [r["Statut"] for r in reconcile(po, bl).rows]
+    assert statuses == ["⚠️ Écart de quantité", "❌ Absent du BL", "➕ Absent du PO"]
+
+
+def test_title_has_no_duplicated_type_keyword():
+    from converter.models import LineItem
+    p = normalize_item(LineItem(sku="DGK-WAL-0001", description="DGK Wallet Brown", qty=1, unit_price_net=15, public_price=39.9),
+                       RULES, MAPPING, COLL, 2.4, 20)
+    assert p.title == "DGK Wallet - Brown"
+    p = normalize_item(LineItem(sku="SPI-WHE-0100", description="Spitfire Wheels Conical Full Wallstreet 99D 56mm", qty=4, unit_price_net=25),
+                       RULES, MAPPING, COLL, 2.4, 20)
+    assert p.title == "Spitfire Wheels - Conical Full Wallstreet - 99D - 56mm"

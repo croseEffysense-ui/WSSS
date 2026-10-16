@@ -61,16 +61,17 @@ shopify-invoice-converter/
 ### `app.py` — Interface et orchestration
 - **Rôle** : seul fichier qui parle à l'utilisateur. Il enchaîne les modules, ne contient **aucune règle métier**.
 - **Contenu clé** :
-  - Barre latérale : coefficient, TVA, import optionnel d'un template, bouton ⚙️ qui ouvre `config_dialog()`.
+  - Barre latérale : prix de secours (coef/TVA) et template optionnel dans des volets repliables, **indicateur de santé de la config** (`config_health`), bouton 🛠️ qui ouvre `config_dialog()`, aide courte.
   - Chargement de la config (`load_json` ×3 + `template_columns`) avec arrêt propre (`st.stop()`) si invalide.
-  - `_parse(file_bytes, profile)` : enveloppe de `parse_pdf` mise en cache (`@st.cache_data`).
-  - **Onglet 1** : choix du profil → parsing → tableau éditable (`st.data_editor`) → `normalize_item` → `build_dataframe` → alertes → téléchargement CSV.
-  - **Onglet 2** : parsing PO et BL (PDF, ou CSV avec choix des colonnes SKU/quantité) → `reconcile` → affichage.
+  - `_read_text` (mise en cache) et `_parse_document(bytes, choix)` : lecture du PDF puis **détection automatique du format** (`AUTO`) ou profil imposé.
+  - `render_convert()` : parcours guidé en 3 étapes (déposer → vérifier dans un tableau éditable → télécharger) avec indicateurs (lignes, produits, unités, valeur d'achat, alertes), aperçu limité aux colonnes utiles (`PREVIEW_COLUMNS`) et CSV daté.
+  - `render_reconcile()` : dépôt PO + BL (PDF ou CSV, colonnes SKU/quantité devinées), tableau de statuts par ligne, quantités à copier, détail des écarts. Chaque onglet est une fonction qui `return` en cas d'erreur, pour qu'une erreur d'un onglet ne bloque pas l'autre.
 
 ### `converter/config.py` — Configuration et E/S
 - **Rôle** : point unique pour les constantes et l'accès aux fichiers de config.
 - **Contenu clé** :
   - Constantes métier : `TAG_NEW` (`nouveautés`), `WEIGHT_NORMAL_G` (500), `WEIGHT_DECK_G` (1000), `WEIGHT_UNIT` (`kg`).
+  - `config_health(rules, mapping, collections)` : liste des points de configuration à compléter (affichée dans la barre latérale).
   - `PROFILES` : dictionnaire *nom lisible → liste ordonnée des champs numériques* en fin de ligne (`qty`, `unit_price_gross`, `unit_price_net`, `total`, `public_price`). **C'est ce qui adapte le parseur à un format de document.**
   - `load_json(name)` / `save_json(name, data)` : lecture avec erreurs lisibles ; écriture **atomique** (fichier temporaire + `os.replace`).
   - `template_columns(uploaded=None)` : colonnes du template (upload > `data/product_template.csv`), ordre conservé.
@@ -91,13 +92,14 @@ shopify-invoice-converter/
   - `extract_text` : mode `layout` de pypdf avec repli sur le mode standard ; gère PDF chiffré, corrompu, vide (scan).
   - `parse_text` : découpe en **blocs** (un SKU en début de ligne ouvre un bloc ; un pied de page le ferme).
   - `_parse_block` : récupère description, Gencod et **les N derniers nombres** (N = taille du profil) ; vérifie `Qté × PU Net ≈ Total`.
-  - `parse_pdf` : point d'entrée ; lève `PdfExtractionError` si aucun article.
+  - `parse_pdf` : point d'entrée direct (profil imposé) ; lève `PdfExtractionError` si aucun article.
+  - `detect_profile(text, profiles)` : essaie tous les profils et retient celui qui produit le plus de lignes **sans alerte** (à égalité, le plus de colonnes). La vérification `Qté × PU Net = Total` sert de discriminant.
 
 ### `converter/normalizer.py` — Règles métier ⚠️ *composant sensible*
 - **Rôle** : transformer un `LineItem` en `Product` (une ligne de variante).
 - **Contenu clé** :
   - `Product` (dataclass) : titre, handle, vendor, type, tags, SKU, barcode, prix, coût, quantité, poids, options 1/2, alertes.
-  - `normalize_size` (`2M→M`, `3L→L`, `4XL→XL`, `S/M` conservé), `detect_brand`, `detect_type`, `slugify`, `_pop_token`.
+  - `normalize_size` (`2M→M`, `3L→L`, `4XL→XL`, `S/M` conservé), `detect_brand`, `detect_type` (retourne la règle **et** la désignation sans le mot-clé du type, pour éviter « Wallet - Wallet »), `slugify`, `_pop_token`.
   - `normalize_item` : applique, selon le `kind` du type détecté :
     - `deck` → option **Largeur**, titre terminé par la largeur ;
     - `wheel` → options **Dureté** + **Diamètre**, titre terminé par `99D - 56mm` ;
@@ -112,7 +114,7 @@ shopify-invoice-converter/
 
 ### `converter/reconciliation.py` — Rapprochement PO / BL
 - **Rôle** : comparer PO et BL de façon déterministe.
-- **Contenu clé** : `reconcile(po, bl)` → `ReconciliationResult` (`quantities` dans l'ordre du PO, `discrepancies`, `ok`, `header`, `quantities_text()`). Détecte : absent du BL, absent du PO, doublons, écarts de quantité, SKU différent rapproché par code-barres. Une ligne sans correspondance vaut `None` (affichée `?`) : **jamais de quantité inventée**.
+- **Contenu clé** : `reconcile(po, bl)` → `ReconciliationResult` (`quantities` dans l'ordre du PO, `discrepancies`, `rows` = tableau détaillé avec statut par ligne, `ok`, `header`, `quantities_text()`). Détecte : absent du BL, absent du PO, doublons, écarts de quantité, SKU différent rapproché par code-barres. Une ligne sans correspondance vaut `None` (affichée `?`) : **jamais de quantité inventée**.
 
 ### `converter/config_ui.py` — Édition de la configuration depuis l'UI
 - **Rôle** : consulter/ajouter/supprimer des éléments des JSON via `config_dialog()` (`@st.dialog`).
@@ -129,7 +131,7 @@ shopify-invoice-converter/
 Référence de la **structure** Shopify (57 colonnes). Seul l'en-tête est utilisé par le code.
 
 ### `tests/test_pipeline.py`
-Couvre : parsing (multi-lignes, Gencod, profil simple), normalisation des tailles, génération CSV (regroupement, titres roues, type wallet), rapprochement OK/KO, validations de config, aller-retour `save_json`. Aucun test ne touche l'interface Streamlit ni de vrai PDF.
+Couvre : parsing (multi-lignes, Gencod, profil simple, détection automatique de profil), santé de la config, titres sans doublon de type, normalisation des tailles, génération CSV (regroupement, titres roues, type wallet), rapprochement OK/KO, validations de config, aller-retour `save_json`. Aucun test ne touche l'interface Streamlit ni de vrai PDF.
 
 ---
 
@@ -193,12 +195,12 @@ graph TD
 ## 4. 🚀 Points d'entrée et flux d'exécution
 
 ### Point d'entrée
-Un seul : **`app.py`**, lancé par `streamlit run app.py`. Streamlit **ré-exécute le script de haut en bas à chaque interaction** ; l'état utile est donc recalculé à chaque fois (seul `_parse` est mis en cache).
+Un seul : **`app.py`**, lancé par `streamlit run app.py`. Streamlit **ré-exécute le script de haut en bas à chaque interaction** ; l'état utile est donc recalculé à chaque fois (seule la lecture du PDF est mise en cache).
 
 ### Scénario 1 — Conversion d'une facture
-1. `app.py` charge les 3 JSON et les colonnes du template (erreur → message + arrêt).
-2. L'utilisateur choisit un **profil** et dépose le PDF.
-3. `_parse` → `parse_pdf` → `extract_text` puis `parse_text` / `_parse_block` → `list[LineItem]` (ou `PdfExtractionError` affichée).
+1. `app.py` charge les 3 JSON et les colonnes du template (erreur → message + arrêt), puis affiche l'état de la config.
+2. L'utilisateur dépose le PDF ; le format est **détecté automatiquement** (ou choisi manuellement).
+3. `_parse_document` → `extract_text` puis `detect_profile` / `parse_text` / `_parse_block` → `list[LineItem]` (ou `PdfExtractionError` affichée).
 4. L'utilisateur corrige les lignes dans le tableau (`st.data_editor`) ; `df_to_items` reconstruit les `LineItem`.
 5. Pour chaque ligne, `normalize_item` applique les règles (marque, type, options, titre, prix, poids, tags) → `Product` + alertes.
 6. `build_dataframe` consolide, groupe par handle, remplit les colonnes du template.
@@ -206,11 +208,11 @@ Un seul : **`app.py`**, lancé par `streamlit run app.py`. Streamlit **ré-exéc
 
 ### Scénario 2 — Rapprochement PO / BL
 1. Dépôt du PO (PDF) et du BL (PDF ou CSV avec choix des colonnes).
-2. Les deux documents deviennent des `list[LineItem]` (même parseur, profils indépendants).
+2. Les deux documents deviennent des `list[LineItem]` (même parseur, format détecté indépendamment pour chacun).
 3. `reconcile` produit le message d'en-tête, la liste d'écarts et les quantités dans l'ordre du PO.
 
 ### Scénario 3 — Modifier la configuration
-Bouton ⚙️ → `config_dialog()` → édition → validation (`validate_*`) → `save_json` (écriture atomique) → `st.rerun()`. Les JSON étant relus à chaque exécution, **le changement est immédiatement actif**.
+Bouton 🛠️ → `config_dialog()` → édition → validation (`validate_*`) → `save_json` (écriture atomique) → `st.rerun()`. Les JSON étant relus à chaque exécution, **le changement est immédiatement actif**.
 
 ---
 
@@ -218,11 +220,11 @@ Bouton ⚙️ → `config_dialog()` → édition → validation (`validate_*`) �
 
 ### Bonnes pratiques
 - **Séparation des couches** : l'UI (`app.py`, `config_ui.py`) n'embarque aucune règle métier ; les modules `converter/*` (hors `config_ui`) **n'importent pas Streamlit**. Conservez cette règle, elle rend le code testable.
-- **Données avant code** : une marque, une couleur, un type ou un mapping se modifie dans `config/*.json` (ou via ⚙️), pas dans le code.
+- **Données avant code** : une marque, une couleur, un type ou un mapping se modifie dans `config/*.json` (ou via 🛠️), pas dans le code.
 - **Messages d'erreur utilisateur** : levez `PdfExtractionError` (ou `ValueError` avec message clair) ; `app.py` les affiche, ne les masquez pas par un `except` silencieux.
 - **Alertes plutôt que silence** : si une donnée est incertaine, ajoutez un texte dans `warnings`, ne devinez pas. Les règles métier interdisent d'inventer SKU, EAN, type ou quantité.
 - **Nommage** : `snake_case` (fonctions/variables), `PascalCase` (classes), `MAJUSCULES` (constantes), `_prefixe` pour les helpers privés. Les clés JSON suivent le même style (`type_key`, `by_type_key`).
-- **Effets de bord** : seuls `config.save_json` et `config_ui._save` écrivent sur disque ; ne dupliquez pas cette logique. Attention à l'import de `config.py` (lecture du template) et au cache de `_parse` : il dépend de `(octets du fichier, profil)`, donc **pas** de la config JSON — ce qui est voulu, car la normalisation s'exécute après.
+- **Effets de bord** : seuls `config.save_json` et `config_ui._save` écrivent sur disque ; ne dupliquez pas cette logique. Attention à l'import de `config.py` (lecture du template) et au cache de `_read_text` : il ne dépend que des octets du PDF, donc **pas** de la config JSON — ce qui est voulu, car parsing et normalisation s'exécutent après.
 - **Constantes de format Shopify** (`TRUE/FALSE`, `DENY`, `Active`, `kg`) : alignées sur le template ; ne les changer qu'après essai d'un import réel.
 
 ### ⚠️ Composants qui risquent de devenir complexes
@@ -243,8 +245,8 @@ Bouton ⚙️ → `config_dialog()` → édition → validation (`validate_*`) �
 5. **Mettre à jour la doc** (`README.md` / ce fichier) et committer.
 
 ### Exemples de recettes
-- **Nouveau format de BL** : ajouter une entrée dans `config.PROFILES` (ordre des colonnes numériques) → aucun autre changement si les SKU respectent `AAA-BBB-1234`. Sinon, assouplir `SKU_RE` avec un test dédié.
-- **Nouveau type de produit** : ⚙️ → *Types de produit* (mots-clés, `type_key`, `kind`, libellé) → compléter le *Mapping* → c'est tout. Un nouveau **`kind`** (comportement d'options inédit) exige en plus : l'ajouter à `config_ui.KINDS` et une branche dans `normalizer.normalize_item`.
+- **Nouveau format de BL** : ajouter une entrée dans `config.PROFILES` (ordre des colonnes numériques) → elle est automatiquement prise en compte par la détection, aucun autre changement si les SKU respectent `AAA-BBB-1234`. Sinon, assouplir `SKU_RE` avec un test dédié.
+- **Nouveau type de produit** : 🛠️ → *Types de produit* (mots-clés, `type_key`, `kind`, libellé) → compléter le *Mapping* → c'est tout. Un nouveau **`kind`** (comportement d'options inédit) exige en plus : l'ajouter à `config_ui.KINDS` et une branche dans `normalizer.normalize_item`.
 - **Nouvelle colonne Shopify à remplir** : ajouter la clé dans le dictionnaire `values` de `build_dataframe` (le nom doit être **exactement** celui du template, sinon elle est ignorée), et le champ correspondant dans `Product` si la valeur vient des règles.
 - **Changer une valeur fixe** (poids, tag, statut) : constante dans `config.py` (poids, tag) ou `build_dataframe` (statut, etc.).
 
@@ -275,7 +277,7 @@ pytest -q
 ```
 
 ### Premier paramétrage (à faire une fois)
-1. ⚙️ **Gérer la configuration** → *Mapping Product Type* : renseigner les valeurs exactes de vos Product Types (seul `wallet → Porte Feuille` est prérempli).
+1. 🛠️ **Gérer la configuration** → *Mapping Product Type* : renseigner les valeurs exactes de vos Product Types (seul `wallet → Porte Feuille` est prérempli).
 2. *Collections* : saisir la liste blanche si besoin.
 3. *Marques / Couleurs / Types* : compléter avec vos données réelles.
 4. Tester avec un PDF **anonymisé** ; ajuster le profil de colonnes ou corriger dans le tableau.
@@ -286,4 +288,4 @@ pytest -q
 - L'extraction repose sur des heuristiques : valider chaque nouveau format fournisseur.
 - Le template n'a pas de colonne *Collection* : les collections autorisées sont ajoutées dans `Tags`.
 - Les canaux de vente (Whatnot, Point de Vente) ne sont pas dans le CSV : `Published on online store` est à `FALSE` et le reste se règle dans Shopify.
-- Sur un hébergement éphémère, les modifications faites via ⚙️ ne survivent pas au redémarrage : exporter le JSON et le committer.
+- Sur un hébergement éphémère, les modifications faites via 🛠️ ne survivent pas au redémarrage : exporter le JSON et le committer.

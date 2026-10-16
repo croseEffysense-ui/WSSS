@@ -64,13 +64,14 @@ def detect_brand(description: str, brands: list[str]) -> tuple[str, str]:
     return "", description
 
 
-def detect_type(description: str, rules: list[dict]) -> Optional[dict]:
-    low = description.lower()
+def detect_type(description: str, rules: list[dict]) -> tuple[Optional[dict], str]:
+    """Retourne (règle, description sans le mot-clé du type) pour éviter « Wallet - Wallet »."""
     for rule in rules:
-        for kw in rule["keywords"]:
-            if re.search(rf"(?<![a-z0-9]){re.escape(kw)}(?![a-z0-9])", low):
-                return rule
-    return None
+        for kw in sorted(rule["keywords"], key=len, reverse=True):
+            pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(kw)}(?![A-Za-z0-9])", re.I)
+            if pattern.search(description):
+                return rule, re.sub(r"\s{2,}", " ", pattern.sub("", description, count=1)).strip()
+    return None, description
 
 
 def _pop_token(tokens: list[str], predicate) -> Optional[str]:
@@ -94,7 +95,7 @@ def normalize_item(
     if not brand:
         warnings.append("Marque non reconnue (Vendor vide)")
 
-    rule = detect_type(remaining, rules["product_types"])
+    rule, remaining = detect_type(remaining, rules["product_types"])
     kind = rule["kind"] if rule else "other"
     type_key = rule["type_key"] if rule else ""
     label = rule["label"] if rule else ""
@@ -140,8 +141,7 @@ def normalize_item(
     if core.isupper():
         core = core.title()
     if not core:
-        core = item.description
-        warnings.append("Nom du produit vide après nettoyage")
+        warnings.append("Nom de l'article absent de la désignation (titre sans nom)")
 
     head = " ".join(p for p in (brand, label) if p)
     title = " - ".join(p for p in (head, core, " - ".join(tail_parts)) if p)

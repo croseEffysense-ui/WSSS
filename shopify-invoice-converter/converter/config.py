@@ -63,6 +63,19 @@ def save_json(name: str, data: dict) -> None:
         raise OSError(f"Impossible d'écrire {path.name} : {exc}") from exc
 
 
+def config_health(rules: dict, mapping: dict, collections: dict) -> list[str]:
+    """Points de configuration à compléter (liste vide = tout est prêt)."""
+    issues: list[str] = []
+    if not rules.get("brands"):
+        issues.append("Aucune marque définie")
+    missing = [r["type_key"] for r in rules.get("product_types", []) if not mapping.get(r["type_key"])]
+    if missing:
+        issues.append(f"{len(missing)} type(s) sans Product Type : {', '.join(missing)}")
+    if not collections.get("allowed"):
+        issues.append("Liste blanche des collections vide")
+    return issues
+
+
 def template_columns(uploaded: Optional[bytes] = None) -> list[str]:
     """Colonnes du template Shopify (upload > fichier du dépôt). Ordre conservé à l'identique."""
     if uploaded:

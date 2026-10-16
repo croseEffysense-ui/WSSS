@@ -3,6 +3,9 @@
 Application Streamlit qui convertit un PDF fournisseur (facture ou bon de livraison) en CSV d'import Shopify,
 et rapproche un Bon de Commande (PO) d'un Bon de Livraison (BL).
 
+## Parcours utilisateur
+1. **Déposer** le PDF (format des colonnes détecté automatiquement) → 2. **Vérifier** les lignes dans un tableau éditable (indicateurs et alertes) → 3. **Télécharger** le CSV. L'onglet *Rapprochement* compare un PO et un BL ligne par ligne.
+
 ## Lancer
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -29,7 +32,7 @@ tests/
 ```
 
 ## Gérer la configuration depuis l'interface
-Bouton **⚙️ Gérer la configuration** dans la barre latérale : consultation, ajout et suppression d'éléments (marques, couleurs, types de produit, mapping Product Type, collections), validation avant sauvegarde, vue et export du JSON brut. Les fichiers `config/*.json` sont réécrits : pensez à les committer.
+Bouton **🛠️ Gérer la configuration** dans la barre latérale : consultation, ajout et suppression d'éléments (marques, couleurs, types de produit, mapping Product Type, collections), validation avant sauvegarde, vue et export du JSON brut. Les fichiers `config/*.json` sont réécrits : pensez à les committer.
 
 ## À compléter avant la première vraie utilisation
 - `product_type_mapping.json` : seule la correspondance `wallet → Porte Feuille` est renseignée ; les autres

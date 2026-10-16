@@ -161,3 +161,25 @@ def parse_pdf(pdf_file: BinaryIO, fields: list[str]) -> list[LineItem]:
             "(attendu : AAA-BBB-1234)."
         )
     return items
+
+
+def detect_profile(text: str, profiles: dict[str, list[str]]) -> tuple[str, list[LineItem]]:
+    """Teste chaque profil de colonnes et retient celui qui donne le plus de lignes sans alerte.
+
+    Départage : à score égal, le profil avec le plus de colonnes (le plus précis) gagne.
+    Retourne (nom du profil, lignes). Lève PdfExtractionError si aucun article n'est détecté.
+    """
+    best: Optional[tuple[tuple[int, int], str, list[LineItem]]] = None
+    for name, fields in profiles.items():
+        items = parse_text(text, fields)
+        if not items:
+            continue
+        score = (sum(1 for i in items if not i.warnings), len(fields))
+        if best is None or score > best[0]:
+            best = (score, name, items)
+    if best is None:
+        raise PdfExtractionError(
+            "Aucun article détecté. Vérifiez que le document est bien une facture / un BL "
+            "dont les références ont la forme AAA-BBB-1234."
+        )
+    return best[1], best[2]
