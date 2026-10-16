@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import io
 import json
+import os
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -44,6 +46,21 @@ def load_json(name: str) -> dict:
         raise FileNotFoundError(f"Fichier de configuration introuvable : {path}") from exc
     except json.JSONDecodeError as exc:
         raise ValueError(f"JSON invalide dans {path.name} (ligne {exc.lineno}) : {exc.msg}") from exc
+
+
+def save_json(name: str, data: dict) -> None:
+    """Écrit un fichier de config de façon atomique (pas de fichier tronqué en cas d'erreur)."""
+    path = CONFIG_DIR / name
+    fd, tmp = tempfile.mkstemp(dir=CONFIG_DIR, suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, ensure_ascii=False, indent=2)
+            fh.write("\n")
+        os.replace(tmp, path)
+    except OSError as exc:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise OSError(f"Impossible d'écrire {path.name} : {exc}") from exc
 
 
 def template_columns(uploaded: Optional[bytes] = None) -> list[str]:

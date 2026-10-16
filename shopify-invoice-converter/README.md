@@ -28,6 +28,9 @@ data/product_template.csv   # template Shopify (ordre des colonnes)
 tests/
 ```
 
+## Gérer la configuration depuis l'interface
+Bouton **⚙️ Gérer la configuration** dans la barre latérale : consultation, ajout et suppression d'éléments (marques, couleurs, types de produit, mapping Product Type, collections), validation avant sauvegarde, vue et export du JSON brut. Les fichiers `config/*.json` sont réécrits : pensez à les committer.
+
 ## À compléter avant la première vraie utilisation
 - `product_type_mapping.json` : seule la correspondance `wallet → Porte Feuille` est renseignée ; les autres
   sont vides (une alerte s'affiche tant qu'elles le sont). Ajoutez votre table officielle.

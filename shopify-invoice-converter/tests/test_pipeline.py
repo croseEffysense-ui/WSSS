@@ -64,3 +64,33 @@ def test_reconcile_ok_and_ko():
     bl_ko = parse_text("AB-CD-1 x 4 1\nAB-CD-9 z 1 1\n", PROFILES["Bon de commande (Qté, PU)"])
     r = reconcile(po, bl_ko)
     assert not r.ok and r.quantities == [4, None] and len(r.discrepancies) == 3
+
+
+def test_config_validation():
+    import pandas as pd
+    from converter.config_ui import clean_list, validate_collections, validate_mapping, validate_types
+
+    vals, errs = clean_list(["DGK", " dgk ", "", None, "Enjoi"], "Marques")
+    assert vals == ["DGK", "Enjoi"] and len(errs) == 1
+
+    rules, errs = validate_types(pd.DataFrame([
+        {"keywords": "Tee, T-Shirt", "type_key": "tee", "kind": "apparel", "label": "T-Shirt"},
+        {"keywords": "", "type_key": "tee", "kind": "bad", "label": ""},
+    ]))
+    assert rules[0]["keywords"] == ["tee", "t-shirt"] and len(errs) == 3
+
+    mapping, errs = validate_mapping(pd.DataFrame([{"type_key": "wallet", "product_type": "Porte Feuille"}]))
+    assert mapping == {"wallet": "Porte Feuille"} and not errs
+
+    data, errs = validate_collections(
+        pd.DataFrame({"Collection": ["Skate"]}),
+        pd.DataFrame([{"type_key": "deck", "collection": "Skate"}, {"type_key": "tee", "collection": "Nope"}]),
+    )
+    assert data["by_type_key"] == {"deck": "Skate"} and len(errs) == 1
+
+
+def test_save_json_roundtrip(tmp_path, monkeypatch):
+    from converter import config
+    monkeypatch.setattr(config, "CONFIG_DIR", tmp_path)
+    config.save_json("x.json", {"a": "é"})
+    assert config.load_json("x.json") == {"a": "é"}

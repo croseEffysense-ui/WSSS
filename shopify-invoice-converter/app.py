@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from converter.config import PROFILES, load_json, template_columns
+from converter.config_ui import config_dialog
 from converter.models import df_to_items, items_to_df, LineItem
 from converter.normalizer import normalize_item
 from converter.pdf_parser import PdfExtractionError, parse_pdf
@@ -23,6 +24,8 @@ coef = st.sidebar.number_input(
 )
 tva = st.sidebar.number_input("Taux de TVA (%)", 0.0, 30.0, 20.0, 0.5)
 template_upload = st.sidebar.file_uploader("Template Shopify (optionnel)", type=["csv"])
+if st.sidebar.button("⚙️ Gérer la configuration", width="stretch"):
+    config_dialog()
 
 try:
     rules = load_json("product_rules.json")
@@ -58,7 +61,7 @@ with tab_convert:
             st.stop()
 
         st.success(f"{len(items)} lignes détectées. Corrigez-les si besoin avant génération.")
-        edited = st.data_editor(items_to_df(items), num_rows="dynamic", use_container_width=True, key="editor")
+        edited = st.data_editor(items_to_df(items), num_rows="dynamic", width="stretch", key="editor")
 
         try:
             products = [
@@ -75,7 +78,7 @@ with tab_convert:
                 st.markdown("\n".join(f"- {m}" for m in issues))
 
         st.subheader("Aperçu du CSV Shopify")
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
         st.download_button(
             "📥 Télécharger le CSV Shopify",
             data=df.to_csv(index=False).encode("utf-8"),
