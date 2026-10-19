@@ -127,3 +127,100 @@ def test_title_has_no_duplicated_type_keyword():
     p = normalize_item(LineItem(sku="SPI-WHE-0100", description="Spitfire Wheels Conical Full Wallstreet 99D 56mm", qty=4, unit_price_net=25),
                        RULES, MAPPING, COLL, 2.4, 20)
     assert p.title == "Spitfire Wheels - Conical Full Wallstreet - 99D - 56mm"
+
+
+# ----------------------------- Stockage Google Sheets (passerelle simulée) -----------------------------
+class FakeGateway:
+    description = "Google Sheet « test »"
+    url = "https://example.test/sheet"
+
+    def __init__(self):
+        self.sheets: dict = {}
+        self.writes: list[str] = []
+        self.reads = 0
+
+    def read_all(self, names):
+        self.reads += 1
+        return {n: self.sheets.get(n) for n in names}
+
+    def write(self, name, rows):
+        self.writes.append(name)
+        self.sheets[name] = [list(r) for r in rows]
+
+
+def _local():
+    from converter.storage import LocalJsonStore
+    from converter.config import CONFIG_DIR
+    return LocalJsonStore(CONFIG_DIR)
+
+
+def _strip(d):
+    return {k: v for k, v in d.items() if not k.startswith("_")}
+
+
+def test_sheets_seed_and_roundtrip_equals_local():
+    from converter.storage import ALL_SHEETS, SheetsStore
+    gw = FakeGateway()
+    store = SheetsStore(gw, seed=_local())
+    for doc in ("product_rules.json", "product_type_mapping.json", "collections.json"):
+        assert store.load(doc) == _strip(_local().load(doc))
+    assert set(gw.sheets) == set(ALL_SHEETS)  # onglets créés et pré-remplis
+
+
+def test_sheets_save_writes_only_changed_sheets_and_caches():
+    from converter.storage import SheetsStore
+    gw = FakeGateway()
+    store = SheetsStore(gw, seed=_local())
+    mapping = store.load("product_type_mapping.json")
+    reads_before, gw.writes = gw.reads, []
+    store.load("collections.json"); store.load("product_rules.json")
+    assert gw.reads == reads_before  # servi par le cache
+    mapping["deck"] = "Planche"
+    store.save("product_type_mapping.json", mapping)
+    assert gw.writes == ["type_mapping"]
+    store.save("product_type_mapping.json", mapping)  # inchangé : aucune écriture
+    assert gw.writes == ["type_mapping"]
+    assert store.load("product_type_mapping.json")["deck"] == "Planche"
+
+
+def test_sheets_direct_edit_visible_after_refresh_and_column_order_free():
+    from converter.storage import SheetsStore
+    gw = FakeGateway()
+    store = SheetsStore(gw, seed=_local())
+    store.load("product_type_mapping.json")
+    gw.sheets["type_mapping"] = [["product_type", "type_key", "notes"], ["Casquette", "cap", "x"], ["", "", ""]]
+    assert store.load("product_type_mapping.json").get("cap") != "Casquette"  # cache encore valide
+    store.refresh()
+    assert store.load("product_type_mapping.json") == {"cap": "Casquette"}
+
+
+def test_sheets_missing_column_gives_clear_error():
+    import pytest
+    from converter.storage import SheetsStore, StorageError
+    gw = FakeGateway()
+    store = SheetsStore(gw, seed=_local())
+    store.load("collections.json")
+    gw.sheets["type_mapping"] = [["type_key"], ["cap"]]
+    store.refresh()
+    with pytest.raises(StorageError, match="product_type"):
+        store.load("product_type_mapping.json")
+
+
+def test_build_store_selection():
+    import pytest
+    from converter.storage import StorageError, build_store
+    local = _local()
+    assert build_store({}, {}, local) is local  # rien de configuré
+    assert build_store({"config_sheet": {"spreadsheet": "x"}, "gcp_service_account": {"a": 1}}, {"CONFIG_BACKEND": "json"}, local) is local
+    with pytest.raises(StorageError, match="incomplète"):
+        build_store({"config_sheet": {"spreadsheet": "x"}}, {}, local)
+    with pytest.raises(StorageError, match="JSON"):
+        build_store({}, {"GOOGLE_SERVICE_ACCOUNT_JSON": "{bad", "CONFIG_SHEET_ID": "x"}, local)
+
+
+def test_config_health_flags_invalid_kind_and_duplicates():
+    from converter.config import config_health
+    rules = {"brands": ["A"], "product_types": [
+        {"type_key": "a", "kind": "oops"}, {"type_key": "a", "kind": "deck"}]}
+    out = " ".join(config_health(rules, {"a": "X"}, {"allowed": ["Y"]}))
+    assert "kind invalide" in out and "en double" in out

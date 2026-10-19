@@ -2,13 +2,12 @@
 from __future__ import annotations
 
 import io
-import json
-import os
-import tempfile
 from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+
+from .storage import VALID_KINDS, ConfigStore, LocalJsonStore
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_DIR = BASE_DIR / "config"
@@ -36,31 +35,27 @@ PROFILES: dict[str, list[str]] = {
 FALLBACK_COLUMNS = list(pd.read_csv(DEFAULT_TEMPLATE, nrows=0).columns) if DEFAULT_TEMPLATE.exists() else []
 
 
+_store: Optional[ConfigStore] = None
+
+
+def set_store(store: Optional[ConfigStore]) -> None:
+    """Définit le backend de configuration actif (None = fichiers JSON locaux)."""
+    global _store
+    _store = store
+
+
+def get_store() -> ConfigStore:
+    return _store if _store is not None else LocalJsonStore(CONFIG_DIR)
+
+
 def load_json(name: str) -> dict:
-    """Charge un fichier JSON de config ; lève une erreur lisible sinon."""
-    path = CONFIG_DIR / name
-    try:
-        with path.open(encoding="utf-8") as fh:
-            return json.load(fh)
-    except FileNotFoundError as exc:
-        raise FileNotFoundError(f"Fichier de configuration introuvable : {path}") from exc
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"JSON invalide dans {path.name} (ligne {exc.lineno}) : {exc.msg}") from exc
+    """Charge un document de config depuis le backend actif (erreurs lisibles)."""
+    return get_store().load(name)
 
 
 def save_json(name: str, data: dict) -> None:
-    """Écrit un fichier de config de façon atomique (pas de fichier tronqué en cas d'erreur)."""
-    path = CONFIG_DIR / name
-    fd, tmp = tempfile.mkstemp(dir=CONFIG_DIR, suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
-            json.dump(data, fh, ensure_ascii=False, indent=2)
-            fh.write("\n")
-        os.replace(tmp, path)
-    except OSError as exc:
-        if os.path.exists(tmp):
-            os.remove(tmp)
-        raise OSError(f"Impossible d'écrire {path.name} : {exc}") from exc
+    """Enregistre un document de config dans le backend actif."""
+    get_store().save(name, data)
 
 
 def config_health(rules: dict, mapping: dict, collections: dict) -> list[str]:
@@ -71,6 +66,14 @@ def config_health(rules: dict, mapping: dict, collections: dict) -> list[str]:
     missing = [r["type_key"] for r in rules.get("product_types", []) if not mapping.get(r["type_key"])]
     if missing:
         issues.append(f"{len(missing)} type(s) sans Product Type : {', '.join(missing)}")
+    types = rules.get("product_types", [])
+    bad_kind = [r["type_key"] for r in types if r.get("kind") not in VALID_KINDS]
+    if bad_kind:
+        issues.append(f"kind invalide pour : {', '.join(bad_kind)} (valeurs permises : {', '.join(VALID_KINDS)})")
+    keys = [r["type_key"] for r in types]
+    dupes = sorted({k for k in keys if keys.count(k) > 1})
+    if dupes:
+        issues.append(f"type_key en double : {', '.join(dupes)}")
     if not collections.get("allowed"):
         issues.append("Liste blanche des collections vide")
     return issues

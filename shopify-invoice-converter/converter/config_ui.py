@@ -9,9 +9,10 @@ import json
 import pandas as pd
 import streamlit as st
 
-from .config import load_json, save_json
+from .config import get_store, load_json, save_json
+from .storage import VALID_KINDS
 
-KINDS = ["deck", "wheel", "apparel", "cap", "other"]
+KINDS = VALID_KINDS
 KIND_HELP = (
     "deck = largeur (Option « Largeur »), wheel = dureté + diamètre, apparel = taille (lettres et chiffres), "
     "cap = taille S/M…, other = pas de variante sauf taille explicite"
@@ -236,8 +237,16 @@ def config_dialog() -> None:
         text = json.dumps(load_json(name), ensure_ascii=False, indent=2)
         st.code(text, language="json")
         st.download_button("📥 Télécharger", text.encode("utf-8"), file_name=name, mime="application/json")
-    st.info(
-        "Les modifications sont écrites dans le dossier `config/`. En local, pensez à les committer sur GitHub ; "
-        "sur un hébergement éphémère (ex. Streamlit Cloud) elles seront perdues au redémarrage : "
-        "téléchargez le JSON et committez-le."
-    )
+    store = get_store()
+    if store.url:
+        st.info(
+            f"Les modifications sont enregistrées dans **{store.description}** : partagées avec toute l'équipe. "
+            "Les personnes qui modifient le Sheet directement sont prises en compte sous ~30 s (ou via « Recharger »)."
+        )
+        st.link_button("📄 Ouvrir le Google Sheet", store.url)
+    else:
+        st.info(
+            "Les modifications sont écrites dans le dossier `config/`. En local, pensez à les committer sur GitHub ; "
+            "sur un hébergement éphémère (ex. Streamlit Cloud) elles seraient perdues au redémarrage : "
+            "connectez Google Sheets (voir README) ou téléchargez le JSON et committez-le."
+        )

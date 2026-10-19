@@ -2,18 +2,20 @@
 from __future__ import annotations
 
 import io
+import os
 from datetime import date
 
 import pandas as pd
 import streamlit as st
 
-from converter.config import PROFILES, config_health, load_json, template_columns
+from converter.config import CONFIG_DIR, PROFILES, config_health, get_store, load_json, set_store, template_columns
 from converter.config_ui import config_dialog
 from converter.models import LineItem, df_to_items, items_to_df
 from converter.normalizer import normalize_item
 from converter.pdf_parser import PdfExtractionError, detect_profile, extract_text, parse_text
 from converter.reconciliation import STATUS_OK, reconcile
 from converter.shopify_builder import build_dataframe
+from converter.storage import LocalJsonStore, StorageError, build_store
 
 AUTO = "🔍 Détection automatique"
 PREVIEW_COLUMNS = [
@@ -26,6 +28,22 @@ st.set_page_config(page_title="Facture fournisseur → Shopify", page_icon="📦
 
 
 # ----------------------------- Helpers -----------------------------
+@st.cache_resource(show_spinner="Connexion à la base de configuration…")
+def _init_store():
+    """Crée le backend de config une seule fois par processus. Retourne (store | None, message d'erreur | None)."""
+    secrets: dict = {}
+    try:  # st.secrets lève une erreur si aucun secrets.toml n'existe : on retombe alors en mode local
+        for key in ("gcp_service_account", "config_sheet"):
+            if key in st.secrets:
+                secrets[key] = dict(st.secrets[key])
+    except Exception:  # noqa: BLE001
+        secrets = {}
+    try:
+        return build_store(secrets, os.environ, LocalJsonStore(CONFIG_DIR)), None
+    except StorageError as exc:
+        return None, str(exc)
+
+
 @st.cache_data(show_spinner=False)
 def _read_text(file_bytes: bytes) -> str:
     return extract_text(io.BytesIO(file_bytes))
@@ -60,12 +78,33 @@ with st.sidebar:
         st.caption("Par défaut, le template du dépôt est utilisé.")
         template_upload = st.file_uploader("Remplacer le template", type=["csv"])
 
+store, store_error = _init_store()
+set_store(store)  # None -> fichiers JSON locaux de secours
+
+with st.sidebar:
+    st.divider()
+    st.subheader("📚 Base de configuration")
+    if store_error:
+        st.error(f"Google Sheets indisponible : {store_error}")
+        st.caption("Mode de secours : fichiers JSON locaux.")
+    active = get_store()
+    if active.url:
+        st.success(f"Connecté à {active.description}")
+        c_open, c_reload = st.columns(2)
+        c_open.link_button("📄 Ouvrir", active.url, width="stretch")
+        if c_reload.button("🔄 Recharger", width="stretch", help="Relit le Google Sheet (utile après une modification directe)"):
+            active.refresh()
+            st.rerun()
+    elif not store_error:
+        st.info(f"{active.description}")
+        st.caption("Pour partager la config en équipe, connectez un Google Sheet (voir README).")
+
 try:
     rules = load_json("product_rules.json")
     type_mapping = load_json("product_type_mapping.json")
     collections = load_json("collections.json")
     columns = template_columns(template_upload.getvalue() if template_upload else None)
-except (FileNotFoundError, ValueError) as exc:
+except (OSError, ValueError) as exc:  # inclut FileNotFoundError et StorageError
     st.error(f"Configuration invalide : {exc}")
     st.stop()
 

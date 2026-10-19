@@ -18,6 +18,7 @@ pytest            # tests
 ```
 app.py                      # interface Streamlit (2 onglets)
 converter/
+  storage.py                # backends de config : JSON local / Google Sheets
   pdf_parser.py             # PDF -> lignes (SKU, description, qté, prix, EAN)
   normalizer.py             # règles métier : marque, type, titre, options, prix, poids
   shopify_builder.py        # lignes -> CSV (colonnes du template, variantes, consolidation)
@@ -33,6 +34,29 @@ tests/
 
 ## Gérer la configuration depuis l'interface
 Bouton **🛠️ Gérer la configuration** dans la barre latérale : consultation, ajout et suppression d'éléments (marques, couleurs, types de produit, mapping Product Type, collections), validation avant sauvegarde, vue et export du JSON brut. Les fichiers `config/*.json` sont réécrits : pensez à les committer.
+
+## Stocker la configuration dans Google Sheets (optionnel)
+
+Par défaut la config vit dans `config/*.json`. Pour la partager en équipe et l'éditer comme un tableur :
+
+1. **Google Cloud** : créez un projet, activez l'**API Google Sheets**, créez un **compte de service** et téléchargez sa clé JSON.
+2. **Google Sheets** : créez un Sheet vide et **partagez-le en Éditeur** avec l'e-mail `client_email` du compte de service.
+3. **Secrets** : copiez `.streamlit/secrets.toml.example` en `.streamlit/secrets.toml` (ou collez-le dans *Secrets* sur Streamlit Cloud) et renseignez l'URL/ID du Sheet et la clé.
+   Alternative sans Streamlit secrets : variables d'environnement `CONFIG_SHEET_ID` et `GOOGLE_SERVICE_ACCOUNT_JSON` (contenu du JSON).
+4. Relancez l'app. Au premier démarrage, les **onglets sont créés et remplis automatiquement** depuis `config/*.json`.
+
+| Onglet | Colonnes | Rôle |
+|---|---|---|
+| `brands` | `brand` | Marques reconnues |
+| `colors` | `color` | Couleurs reconnues |
+| `product_types` | `keywords`, `type_key`, `kind`, `label` | Règles de détection (mots-clés séparés par des virgules ; `kind` = deck, wheel, apparel, cap, other) |
+| `settings` | `key`, `value` | Réglages (`sized_numeric_kinds`) |
+| `type_mapping` | `type_key`, `product_type` | Association → Product Type Shopify exact |
+| `collections_allowed` | `collection` | Liste blanche |
+| `collections_by_type` | `type_key`, `collection` | Type → collection |
+
+Vous pouvez éditer **dans le Sheet** (nouvelles lignes, suppression, modification ; l'ordre des colonnes est libre, ne renommez pas les en-têtes) **ou dans l'app** (🛠️ Gérer la configuration). L'app relit le Sheet toutes les ~30 s, ou immédiatement via **🔄 Recharger**.
+`CONFIG_BACKEND=json` force le mode local. Si Google Sheets est configuré mais inaccessible, l'app affiche l'erreur et bascule sur les JSON locaux.
 
 ## À compléter avant la première vraie utilisation
 - `product_type_mapping.json` : seule la correspondance `wallet → Porte Feuille` est renseignée ; les autres
