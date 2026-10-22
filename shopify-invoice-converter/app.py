@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+import logging
 import os
 from datetime import date
 
@@ -10,6 +11,9 @@ import streamlit as st
 
 from converter.config import CONFIG_DIR, PROFILES, config_health, get_store, load_json, set_store, template_columns
 from converter.config_ui import config_dialog
+from converter.diagnostics import secrets_toml_problem
+from converter.diagnostics_ui import diagnostic_dialog
+from converter.logs import setup_logging
 from converter.models import LineItem, df_to_items, items_to_df
 from converter.normalizer import normalize_item
 from converter.pdf_parser import PdfExtractionError, detect_profile, extract_text, parse_text
@@ -24,23 +28,46 @@ PREVIEW_COLUMNS = [
     "Price", "Cost per item", "Inventory quantity",
 ]
 
+setup_logging()  # idempotent : console + fichier logs/ + tampon mémoire affiché dans l'interface
+log = logging.getLogger("converter.app")
+
 st.set_page_config(page_title="Facture fournisseur → Shopify", page_icon="📦", layout="wide")
 
 
 # ----------------------------- Helpers -----------------------------
-@st.cache_resource(show_spinner="Connexion à la base de configuration…")
-def _init_store():
-    """Crée le backend de config une seule fois par processus. Retourne (store | None, message d'erreur | None)."""
+def _read_secrets() -> tuple[dict, str | None]:
+    """Lit les secrets Streamlit. Retourne (secrets, message d'erreur). Ne masque plus les erreurs."""
     secrets: dict = {}
-    try:  # st.secrets lève une erreur si aucun secrets.toml n'existe : on retombe alors en mode local
+    try:
         for key in ("gcp_service_account", "config_sheet"):
             if key in st.secrets:
                 secrets[key] = dict(st.secrets[key])
-    except Exception:  # noqa: BLE001
-        secrets = {}
+    except FileNotFoundError:
+        # Streamlit lève la MÊME erreur pour « fichier absent » et « TOML invalide » : on les distingue.
+        problem = secrets_toml_problem()
+        if problem:
+            log.error("secrets.toml présent mais invalide : %s", problem)
+            return {}, f"secrets.toml invalide — {problem}"
+        log.info("Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)")
+    except Exception as exc:  # noqa: BLE001 - TOML invalide, etc. : on le journalise ET on l'affiche
+        log.error("Lecture des secrets Streamlit impossible : %s: %s", type(exc).__name__, exc, exc_info=True)
+        return {}, f"{type(exc).__name__}: {exc}"
+    log.info("Secrets Streamlit lus : sections %s", sorted(secrets))
+    return secrets, None
+
+
+@st.cache_resource(show_spinner="Connexion à la base de configuration…")
+def _init_store():
+    """Crée le backend de config une seule fois par processus. Retourne (store | None, message d'erreur | None)."""
+    secrets, secrets_error = _read_secrets()
+    if secrets_error:
+        return None, f"Secrets illisibles : {secrets_error}"
     try:
-        return build_store(secrets, os.environ, LocalJsonStore(CONFIG_DIR)), None
+        store = build_store(secrets, os.environ, LocalJsonStore(CONFIG_DIR))
+        log.info("Backend de configuration actif : %s", store.description)
+        return store, None
     except StorageError as exc:
+        log.error("Échec de connexion à la base de configuration : %s", exc)
         return None, str(exc)
 
 
@@ -86,7 +113,11 @@ with st.sidebar:
     st.subheader("📚 Base de configuration")
     if store_error:
         st.error(f"Google Sheets indisponible : {store_error}")
-        st.caption("Mode de secours : fichiers JSON locaux.")
+        st.caption("Mode de secours : fichiers JSON locaux. Ouvrez le diagnostic pour localiser le blocage.")
+        if st.button("🔁 Réessayer la connexion", width="stretch", help="Après correction des secrets ou du partage du Sheet"):
+            _init_store.clear()
+            log.info("Nouvelle tentative de connexion demandée par l'utilisateur")
+            st.rerun()
     active = get_store()
     if active.url:
         st.success(f"Connecté à {active.description}")
@@ -98,6 +129,9 @@ with st.sidebar:
     elif not store_error:
         st.info(f"{active.description}")
         st.caption("Pour partager la config en équipe, connectez un Google Sheet (voir README).")
+    if st.button("🩺 Diagnostic & journal", width="stretch", help="Teste la connexion étape par étape et affiche les logs"):
+        _secrets, _secrets_error = _read_secrets()
+        diagnostic_dialog(_secrets, dict(os.environ), _secrets_error)
 
 try:
     rules = load_json("product_rules.json")
@@ -105,6 +139,7 @@ try:
     collections = load_json("collections.json")
     columns = template_columns(template_upload.getvalue() if template_upload else None)
 except (OSError, ValueError) as exc:  # inclut FileNotFoundError et StorageError
+    log.error("Chargement de la configuration impossible : %s", exc, exc_info=True)
     st.error(f"Configuration invalide : {exc}")
     st.stop()
 

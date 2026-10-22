@@ -224,3 +224,99 @@ def test_config_health_flags_invalid_kind_and_duplicates():
         {"type_key": "a", "kind": "oops"}, {"type_key": "a", "kind": "deck"}]}
     out = " ".join(config_health(rules, {"a": "X"}, {"allowed": ["Y"]}))
     assert "kind invalide" in out and "en double" in out
+
+
+# ----------------------------- Logs & diagnostic -----------------------------
+def test_redact_masks_secrets_but_keeps_plain_hints():
+    from converter.logs import redact
+    pem = "-----BEGIN PRIVATE KEY-----\n" + "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC" * 4 + "\n-----END PRIVATE KEY-----\n"
+    assert "MIIEvQ" not in redact(f"clé: {pem}") and "[CLÉ PRIVÉE MASQUÉE]" in redact(pem)
+    assert "MIIEvQ" not in redact('{"private_key": "-----BEGIN PRIVATE KEY-----\\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCMIIEvQIBADANBgkq\\n"}')
+    assert "ya29" not in redact("token ya29.a0AfH6SMBxyz_123-abc") and "eyJ" not in redact("jwt eyJhbGciOi.eyJpc3MiOiJ4.c2lnbmF0dXJl")
+    assert "-----BEGIN PRIVATE KEY----- … -----END" in redact("avec -----BEGIN PRIVATE KEY----- … -----END PRIVATE KEY-----")
+
+
+def test_log_buffer_is_redacted_and_idempotent_setup():
+    import logging
+    from converter.logs import BUFFER, get_entries, setup_logging
+    setup_logging("ERROR"); setup_logging("ERROR")
+    logger = logging.getLogger("converter.test")
+    assert len([h for h in logging.getLogger("converter").handlers if h is BUFFER]) == 1
+    logger.info("Authorization: Bearer ya29.SECRETSECRETSECRETSECRET1234")
+    assert not any("SECRETSECRET" in e.message for e in get_entries()) and any("converter.test" == e.logger for e in get_entries())
+
+
+def test_explain_google_error_cases():
+    from gspread.exceptions import APIError
+    from converter.storage import explain_google_error
+
+    class R:
+        def __init__(self, code, status, message, reason=""):
+            self.status_code, self.text = code, message
+            self._p = {"error": {"code": code, "message": message, "status": status, "details": [{"reason": reason}]}}
+        def json(self): return self._p
+
+    disabled = explain_google_error(APIError(R(403, "PERMISSION_DENIED", "Google Sheets API has not been used in project 42 before or it is disabled.", "SERVICE_DISABLED")), "42", "bot@x")
+    assert "API Google Sheets n'est PAS activée" in disabled and "project=42" in disabled
+    assert "Éditeur" in explain_google_error(APIError(R(403, "PERMISSION_DENIED", "The caller does not have permission")), "p", "bot@x")
+    assert "introuvable" in explain_google_error(APIError(R(404, "NOT_FOUND", "Requested entity was not found.")))
+    assert ".xlsx" in explain_google_error(APIError(R(400, "FAILED_PRECONDITION", "This operation is not supported for this document")))
+    assert "réseau" in explain_google_error(ConnectionError("Max retries exceeded"))
+
+
+def _offline(monkeypatch):
+    import requests
+    def boom(*a, **k): raise requests.exceptions.ConnectionError("Name or service not known")
+    monkeypatch.setattr(requests, "get", boom)
+
+
+def test_diagnostics_nothing_configured_skips_everything_else(monkeypatch):
+    from converter.diagnostics import run_diagnostics
+    _offline(monkeypatch)
+    steps = {s.name: s for s in run_diagnostics({}, {})}
+    assert steps["Choix du backend"].status == "error"
+    assert steps["Compte de service : champs"].status == "skip" and steps["Réseau vers Google"].status == "skip"
+
+
+def test_diagnostics_first_blocker_is_reported_and_chain_stops(monkeypatch):
+    from converter.diagnostics import run_diagnostics
+    _offline(monkeypatch)
+    secrets = {"gcp_service_account": {"type": "service_account", "project_id": "p", "private_key": "pas-une-cle",
+                                       "client_email": "bot@p.iam.gserviceaccount.com", "token_uri": "https://x"},
+               "config_sheet": {"spreadsheet": "https://docs.google.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789/edit"}}
+    steps = run_diagnostics(secrets, {})
+    by = {s.name: s for s in steps}
+    assert [s.name for s in steps if s.status == "error"][0] == "Compte de service : champs"
+    assert by["Référence du Sheet"].status == "skip" and by["Accès au Sheet (partage + API activée)"].status == "skip"
+    assert by["Réseau vers Google"].status == "error"  # indépendant de la clé : toujours testé
+    assert not any("KeyError" in s.detail for s in steps)
+    assert "BEGIN PRIVATE KEY" in by["Compte de service : champs"].detail  # texte d'aide non masqué
+
+
+def test_diagnostics_toml_error_is_surfaced(monkeypatch):
+    from converter.diagnostics import run_diagnostics
+    _offline(monkeypatch)
+    s = {x.name: x for x in run_diagnostics({}, {}, secrets_error="TomlDecodeError: Invalid value (at line 4)")}
+    assert s["Lecture des secrets Streamlit"].status == "error" and "line 4" in s["Lecture des secrets Streamlit"].detail
+
+
+def test_broken_secrets_toml_is_detected_not_silently_ignored(tmp_path, monkeypatch):
+    from converter.diagnostics import inspect_secrets_files, run_diagnostics, secrets_toml_problem
+    _offline(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".streamlit").mkdir()
+    (tmp_path / ".streamlit" / "secrets.toml").write_text('[config_sheet]\nspreadsheet = "https://docs.google.com/x\n', encoding="utf-8")
+    found = [f for f in inspect_secrets_files() if f.path.parent.parent == tmp_path]
+    assert found and found[0].exists and found[0].toml_error and "line" in found[0].toml_error.lower()
+    assert secrets_toml_problem() and str(tmp_path) in secrets_toml_problem()
+    steps = {s.name: s for s in run_diagnostics({}, {})}
+    assert steps["Fichiers secrets.toml"].status == "error" and "INVALIDE" in steps["Fichiers secrets.toml"].detail
+
+
+def test_misnamed_secrets_file_is_visible(tmp_path, monkeypatch):
+    from converter.diagnostics import inspect_secrets_files
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".streamlit").mkdir()
+    (tmp_path / ".streamlit" / "secrets.toml.txt").write_text("a = 1", encoding="utf-8")
+    f = [x for x in inspect_secrets_files() if x.path.parent.parent == tmp_path][0]
+    assert not f.exists and "secrets.toml.txt" in f.siblings

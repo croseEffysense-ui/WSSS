@@ -10,13 +10,19 @@ importé que si Google Sheets est réellement configuré.
 from __future__ import annotations
 
 import json
+import logging
 import os
+import re
 import tempfile
 import threading
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Iterator, Mapping, Optional, Protocol
+from dataclasses import dataclass, field
+from typing import Any, Callable, Iterator, Mapping, Optional, Protocol
+
+log = logging.getLogger("converter.storage")
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 DOC_RULES = "product_rules.json"
 DOC_MAPPING = "product_type_mapping.json"
@@ -66,7 +72,8 @@ class LocalJsonStore:
         path = self.directory / name
         try:
             with path.open(encoding="utf-8") as fh:
-                return json.load(fh)
+                data = json.load(fh)
+                return data
         except FileNotFoundError as exc:
             raise FileNotFoundError(f"Fichier de configuration introuvable : {path}") from exc
         except json.JSONDecodeError as exc:
@@ -81,9 +88,11 @@ class LocalJsonStore:
                 json.dump(data, fh, ensure_ascii=False, indent=2)
                 fh.write("\n")
             os.replace(tmp, path)
+            log.info("Config locale enregistrée : %s", path)
         except OSError as exc:
             if os.path.exists(tmp):
                 os.remove(tmp)
+            log.error("Écriture impossible de %s : %s", path, exc)
             raise StorageError(f"Impossible d'écrire {path.name} : {exc}") from exc
 
     def refresh(self) -> None:  # rien à rafraîchir : lecture directe du disque
@@ -223,11 +232,14 @@ class SheetsStore:
         self.url = gateway.url
 
     def _fetch(self) -> dict[str, Rows]:
+        log.info("Lecture de la config depuis Google Sheets (cache vide ou expiré)…")
         data = self._gw.read_all(ALL_SHEETS)
         missing = [s for s in ALL_SHEETS if not data.get(s)]
         if missing:
+            log.warning("Onglets absents ou vides : %s → création et pré-remplissage depuis la config locale", missing)
             self._seed_sheets(missing)
             data = self._gw.read_all(ALL_SHEETS)
+        log.info("Config chargée : %s", {s: max(len(data.get(s) or []) - 1, 0) for s in ALL_SHEETS})
         return {s: data.get(s) or [] for s in ALL_SHEETS}
 
     def _seed_sheets(self, missing: list[str]) -> None:
@@ -237,10 +249,12 @@ class SheetsStore:
                 continue
             try:
                 source = self._seed.load(doc) if self._seed else {}
-            except (OSError, ValueError):
+            except (OSError, ValueError) as exc:
+                log.warning("Graine locale illisible pour %s (%s) : onglets créés vides", doc, exc)
                 source = {}
             rows = doc_to_sheets(doc, source)
             for s in todo:
+                log.info("Initialisation de l'onglet « %s » (%d ligne(s))", s, len(rows[s]) - 1)
                 self._gw.write(s, rows[s])
 
     def _bundle(self) -> dict[str, Rows]:
@@ -259,16 +273,148 @@ class SheetsStore:
             bundle = self._bundle()
             for sheet, rows in new.items():
                 if _norm(rows) != _norm(bundle.get(sheet, [])):
+                    log.info("Enregistrement de l'onglet « %s » (%d ligne(s))", sheet, len(rows) - 1)
                     self._gw.write(sheet, rows)
                     bundle[sheet] = rows
+                else:
+                    log.debug("Onglet « %s » inchangé : aucune écriture", sheet)
 
     def refresh(self) -> None:
+        log.info("Cache de configuration vidé (rechargement demandé)")
         with self._lock:
             self._data = None
 
 
+# ============================ Aides au diagnostic (pures) ============================
+@dataclass
+class ResolvedSettings:
+    """Ce que build_store a trouvé comme paramètres, et d'où ça vient."""
+
+    forced_local: bool = False
+    info: Optional[dict] = None
+    info_source: str = "absent"
+    sheet: Optional[str] = None
+    sheet_source: str = "absent"
+    problems: list[str] = field(default_factory=list)
+
+
+def resolve_settings(secrets: Mapping, env: Mapping[str, str]) -> ResolvedSettings:
+    r = ResolvedSettings()
+    if env.get("CONFIG_BACKEND", "").strip().lower() == "json":
+        r.forced_local = True
+        return r
+    if secrets.get("gcp_service_account"):
+        r.info, r.info_source = dict(secrets["gcp_service_account"]), "secrets Streamlit [gcp_service_account]"
+    elif env.get("GOOGLE_SERVICE_ACCOUNT_JSON"):
+        try:
+            r.info, r.info_source = json.loads(env["GOOGLE_SERVICE_ACCOUNT_JSON"]), "variable GOOGLE_SERVICE_ACCOUNT_JSON"
+        except json.JSONDecodeError as exc:
+            r.problems.append(f"GOOGLE_SERVICE_ACCOUNT_JSON n'est pas un JSON valide (ligne {exc.lineno}, col {exc.colno}) : {exc.msg}")
+    cfg = secrets.get("config_sheet") or {}
+    if cfg.get("spreadsheet"):
+        r.sheet, r.sheet_source = str(cfg["spreadsheet"]), "secrets Streamlit [config_sheet] spreadsheet"
+    elif env.get("CONFIG_SHEET_ID"):
+        r.sheet, r.sheet_source = env["CONFIG_SHEET_ID"], "variable CONFIG_SHEET_ID"
+    elif "config_sheet" in secrets and not cfg.get("spreadsheet"):
+        r.problems.append("La section [config_sheet] existe mais la clé « spreadsheet » est absente ou vide.")
+    return r
+
+
+def extract_spreadsheet_id(ref: str) -> str:
+    """Accepte une URL complète ou un ID brut ; lève StorageError si inexploitable."""
+    ref = ref.strip().strip("\"'")
+    if ref.startswith("http"):
+        m = re.search(r"/spreadsheets/d/([A-Za-z0-9_-]+)", ref)
+        if not m:
+            raise StorageError(
+                "L'URL du Sheet n'a pas la forme https://docs.google.com/spreadsheets/d/<ID>/… "
+                "(copiez l'URL depuis la barre d'adresse du Sheet ouvert)."
+            )
+        return m.group(1)
+    if not re.fullmatch(r"[A-Za-z0-9_-]{20,}", ref):
+        raise StorageError(f"« {ref[:40]} » ne ressemble ni à une URL de Google Sheet ni à un ID (44 caractères environ).")
+    return ref
+
+
+def normalize_service_account(info: Mapping) -> tuple[dict, list[str]]:
+    """Corrige les défauts classiques de la clé collée dans les secrets ; retourne (info, notes)."""
+    fixed = {k: (v.strip() if isinstance(v, str) else v) for k, v in dict(info).items()}
+    notes: list[str] = []
+    key = fixed.get("private_key")
+    if isinstance(key, str) and "\\n" in key and "\n" not in key:
+        fixed["private_key"] = key.replace("\\n", "\n")
+        notes.append("private_key : séquences « \\n » littérales converties en vrais retours à la ligne (corrigé automatiquement).")
+    return fixed, notes
+
+
+def describe_service_account(info: Mapping) -> dict[str, Any]:
+    """Résumé SANS secret du compte de service (sûr à afficher/journaliser)."""
+    key = info.get("private_key")
+    key_desc: Any = "absente"
+    if isinstance(key, str):
+        key_desc = {
+            "longueur": len(key),
+            "commence_par_BEGIN_PRIVATE_KEY": key.strip().startswith("-----BEGIN PRIVATE KEY-----"),
+            "finit_par_END_PRIVATE_KEY": key.strip().endswith("-----END PRIVATE KEY-----"),
+            "retours_ligne_reels": key.count("\n"),
+            "sequences_backslash_n_litterales": key.count("\\n"),
+        }
+    return {
+        "type": info.get("type"),
+        "project_id": info.get("project_id"),
+        "client_email": info.get("client_email"),
+        "private_key_id": (str(info.get("private_key_id"))[:6] + "…") if info.get("private_key_id") else None,
+        "token_uri": info.get("token_uri"),
+        "private_key": key_desc,
+    }
+
+
+def explain_google_error(exc: BaseException, project_id: str = "?", email: str = "le compte de service") -> str:
+    """Traduit une exception Google/réseau en « Type: message → piste de résolution »."""
+    name = type(exc).__name__
+    text = str(exc)
+    low = text.lower()
+    response = getattr(exc, "response", None)
+    code = getattr(response, "status_code", None) or getattr(exc, "code", None)
+    reasons = ""
+    try:
+        reasons = json.dumps(response.json().get("error", {}).get("details", []))
+    except Exception:  # noqa: BLE001
+        pass
+    blob = f"{low} {reasons.lower()}"
+    short = f"{name}: {text[:300]}"
+
+    if "service_disabled" in blob or "accessnotconfigured" in blob or "has not been used in project" in blob or "is disabled" in blob:
+        hint = (f"L'API Google Sheets n'est PAS activée dans le projet « {project_id} ». Activez-la : "
+                f"https://console.developers.google.com/apis/api/sheets.googleapis.com/overview?project={project_id} "
+                "(attendez ~1 minute après l'activation).")
+    elif "failed_precondition" in blob or "not supported for this document" in blob:
+        hint = "Ce fichier n'est pas un Google Sheet natif (probablement un .xlsx importé dans Drive). Ouvrez-le puis « Fichier → Enregistrer en tant que Google Sheets »."
+    elif code == 403 or "permission" in blob or "caller does not have" in blob:
+        hint = f"Accès refusé : partagez le Sheet avec {email} avec le rôle « Éditeur » (bouton Partager du Sheet)."
+    elif code == 404 or "not found" in blob:
+        hint = "Sheet introuvable : l'ID/URL est faux, ou le Sheet est dans un Drive partagé non accessible au compte de service."
+    elif code == 429 or "quota" in blob or "rate limit" in blob:
+        hint = "Quota Google atteint (≈60 lectures/min) : patientez une minute puis cliquez sur « Recharger »."
+    elif "invalid_grant" in blob and ("signature" in blob or "jwt" in blob):
+        hint = "Signature JWT refusée : la clé a été supprimée/révoquée dans Google Cloud, ou private_key est corrompue. Générez une NOUVELLE clé JSON."
+    elif "invalid_grant" in blob or "token must be a short-lived" in blob or "invalid jwt" in blob:
+        hint = "Jeton refusé : horloge de la machine décalée (synchronisez l'heure) ou clé révoquée."
+    elif "invalid_scope" in blob or "unauthorized_client" in blob:
+        hint = "Autorisation (scope) refusée pour ce compte de service."
+    elif any(k in blob for k in ("pem", "could not deserialize", "unable to load", "asn1", "invalid private key", "no key could be detected")):
+        hint = ("private_key illisible : recopiez la valeur EXACTE du champ « private_key » du JSON "
+                "(avec -----BEGIN PRIVATE KEY----- … -----END PRIVATE KEY-----). Dans secrets.toml, gardez les « \\n » entre guillemets doubles.")
+    elif any(k in name.lower() for k in ("connection", "timeout", "proxy", "transport", "ssl")) or "name or service not known" in blob or "max retries" in blob:
+        hint = "Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com"
+    else:
+        hint = "Cause non reconnue : consultez le détail technique et le journal (onglet « Journal d'exécution »)."
+    return f"{short}  →  {hint}"
+
+
+# ============================ Accès réel Google Sheets ============================
 class GSpreadGateway:
-    """Accès réel à Google Sheets via un compte de service (gspread)."""
+    """Accès réel à Google Sheets via un compte de service (gspread). Journalise chaque étape."""
 
     def __init__(self, service_account_info: Mapping, spreadsheet: str):
         try:
@@ -276,39 +422,45 @@ class GSpreadGateway:
         except ImportError as exc:
             raise StorageError("Module « gspread » manquant : pip install gspread") from exc
         self._gspread = gspread
-        self.email = str(service_account_info.get("client_email", "le compte de service"))
-        with self._errors():
-            client = gspread.service_account_from_dict(dict(service_account_info))
-            ref = spreadsheet.strip()
-            self._sh = client.open_by_url(ref) if ref.startswith("http") else client.open_by_key(ref)
+        info, notes = normalize_service_account(service_account_info)
+        for note in notes:
+            log.warning(note)
+        self.email = str(info.get("client_email", "le compte de service"))
+        self.project_id = str(info.get("project_id", "?"))
+        sheet_id = extract_spreadsheet_id(spreadsheet)
+        log.info("Connexion à Google Sheets · version gspread %s", getattr(gspread, "__version__", "?"))
+        log.info("Compte de service : %s", describe_service_account(info))
+        log.info("Sheet cible (ID) : %s", sheet_id)
+
+        with self._step("création des identifiants (lecture de la clé privée)"):
+            client = gspread.service_account_from_dict(info, scopes=SCOPES)
+        with self._step("ouverture du Sheet (obtention du jeton OAuth puis lecture des métadonnées)"):
+            self._sh = client.open_by_key(sheet_id)
         self.description = f"Google Sheet « {self._sh.title} »"
         self.url = self._sh.url
+        log.info("Connecté : %s · %s", self.description, self.url)
 
     @contextmanager
-    def _errors(self) -> Iterator[None]:
-        g = self._gspread
+    def _step(self, action: str) -> Iterator[None]:
+        """Chronomètre une étape, journalise et convertit toute erreur en StorageError explicite."""
+        log.debug("→ %s…", action)
+        t0 = time.perf_counter()
         try:
             yield
         except StorageError:
             raise
-        except g.exceptions.SpreadsheetNotFound as exc:
-            raise StorageError(f"Google Sheet introuvable. Vérifiez l'ID/l'URL et partagez-le avec {self.email} (rôle Éditeur).") from exc
-        except g.exceptions.APIError as exc:
-            code = getattr(getattr(exc, "response", None), "status_code", None)
-            hints = {
-                403: f"Accès refusé : partagez le Sheet avec {self.email} (rôle Éditeur) et activez l'API Google Sheets.",
-                404: "Google Sheet introuvable : vérifiez l'ID ou l'URL.",
-                429: "Quota Google atteint : patientez une minute puis cliquez sur « Recharger ».",
-            }
-            raise StorageError(hints.get(code, f"Erreur Google Sheets (code {code}) : {exc}")) from exc
-        except (ValueError, KeyError) as exc:
-            raise StorageError(f"Identifiants du compte de service invalides : {exc}") from exc
-        except Exception as exc:  # noqa: BLE001 - réseau, GSpreadException, etc.
-            raise StorageError(f"Connexion à Google Sheets impossible : {exc}") from exc
+        except Exception as exc:  # noqa: BLE001 - on enrichit puis on relance proprement
+            ms = int((time.perf_counter() - t0) * 1000)
+            message = explain_google_error(exc, self.project_id if hasattr(self, "project_id") else "?", self.email if hasattr(self, "email") else "le compte de service")
+            log.error("✗ ÉCHEC pendant : %s (%d ms) — %s", action, ms, message, exc_info=True)
+            raise StorageError(f"Échec pendant « {action} » — {message}") from exc
+        else:
+            log.debug("✓ %s (%d ms)", action, int((time.perf_counter() - t0) * 1000))
 
     def read_all(self, names: list[str]) -> dict[str, Optional[Rows]]:
-        with self._errors():
+        with self._step("lecture groupée des onglets"):
             existing = {ws.title for ws in self._sh.worksheets()}
+            log.debug("Onglets présents dans le Sheet : %s", sorted(existing))
             present = [n for n in names if n in existing]
             result: dict[str, Optional[Rows]] = {n: None for n in names}
             if present:
@@ -319,11 +471,12 @@ class GSpreadGateway:
 
     def write(self, name: str, rows: Rows) -> None:
         g = self._gspread
-        with self._errors():
+        with self._step(f"écriture de l'onglet « {name} »"):
             try:
                 ws = self._sh.worksheet(name)
                 created = False
             except g.exceptions.WorksheetNotFound:
+                log.info("Création de l'onglet « %s »", name)
                 ws = self._sh.add_worksheet(title=name, rows=max(len(rows) + 50, 100), cols=max(len(rows[0]), 4))
                 created = True
             if ws.row_count < len(rows) + 1:
@@ -345,8 +498,8 @@ class GSpreadGateway:
                 "rule": {"condition": {"type": "ONE_OF_LIST", "values": [{"userEnteredValue": k} for k in VALID_KINDS]},
                          "showCustomUi": True, "strict": False},
             }}]})
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Liste déroulante « kind » non créée (sans conséquence) : %s", exc)
 
 
 # ============================ Fabrique ============================
@@ -359,19 +512,20 @@ def build_store(secrets: Mapping, env: Mapping[str, str], local: ConfigStore) ->
       - CONFIG_BACKEND=json force le mode local.
     Lève StorageError si Google Sheets est configuré mais inutilisable.
     """
-    if env.get("CONFIG_BACKEND", "").strip().lower() == "json":
+    r = resolve_settings(secrets, env)
+    log.info(
+        "Choix du backend de config · forcé local=%s · compte de service=%s · sheet=%s",
+        r.forced_local, r.info_source, r.sheet_source,
+    )
+    if r.forced_local:
+        log.info("CONFIG_BACKEND=json : fichiers JSON locaux")
         return local
-
-    info = secrets.get("gcp_service_account")
-    if not info and env.get("GOOGLE_SERVICE_ACCOUNT_JSON"):
-        try:
-            info = json.loads(env["GOOGLE_SERVICE_ACCOUNT_JSON"])
-        except json.JSONDecodeError as exc:
-            raise StorageError(f"GOOGLE_SERVICE_ACCOUNT_JSON n'est pas un JSON valide : {exc.msg}") from exc
-    sheet = (secrets.get("config_sheet") or {}).get("spreadsheet") or env.get("CONFIG_SHEET_ID")
-
-    if not info and not sheet:
-        return local  # Google Sheets non configuré : mode local
-    if not info or not sheet:
-        raise StorageError("Configuration Google Sheets incomplète : il faut à la fois le compte de service ET l'ID/URL du Sheet.")
-    return SheetsStore(GSpreadGateway(info, str(sheet)), seed=local)
+    if r.problems:
+        raise StorageError(" ".join(r.problems))
+    if not r.info and not r.sheet:
+        log.info("Google Sheets non configuré (ni secrets ni variables d'environnement) : mode fichiers JSON locaux")
+        return local
+    if not r.info or not r.sheet:
+        missing = "le compte de service (gcp_service_account / GOOGLE_SERVICE_ACCOUNT_JSON)" if not r.info else "l'ID/URL du Sheet ([config_sheet] spreadsheet / CONFIG_SHEET_ID)"
+        raise StorageError(f"Configuration Google Sheets incomplète : il manque {missing}.")
+    return SheetsStore(GSpreadGateway(r.info, r.sheet), seed=local)

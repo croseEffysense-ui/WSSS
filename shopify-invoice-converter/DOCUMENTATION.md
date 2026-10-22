@@ -39,6 +39,9 @@ shopify-invoice-converter/
 │   ├── __init__.py
 │   ├── config.py                   # Constantes, profils, façade load/save vers le backend actif, colonnes template
 │   ├── storage.py                  # Backends de config : JSON local / Google Sheets (gspread)
+│   ├── logs.py                     # Journalisation : console + fichier + tampon mémoire, masquage des secrets
+│   ├── diagnostics.py              # Diagnostic pas à pas de la connexion Google Sheets (pur)
+│   ├── diagnostics_ui.py           # Fenêtre Streamlit « Diagnostic & journal »
 │   ├── config_ui.py                # Fenêtre d'édition de la config + validations
 │   ├── models.py                   # LineItem + conversions DataFrame <-> objets
 │   ├── pdf_parser.py               # PDF -> lignes articles
@@ -88,8 +91,17 @@ shopify-invoice-converter/
   - `SHEET_SCHEMAS` / `DOC_SHEETS` : description des onglets du Sheet (colonnes attendues) et du document auquel ils appartiennent.
   - `sheets_to_doc` / `doc_to_sheets` : conversions **pures** document ↔ onglets (colonnes dans un ordre libre, lignes vides ignorées).
   - `SheetsStore` : cache mémoire à TTL (30 s) pour limiter le quota d'API (**une seule lecture groupée** de tous les onglets) ; **création et pré-remplissage** des onglets manquants depuis la config locale ; à l'enregistrement, **seuls les onglets modifiés** sont réécrits.
-  - `GSpreadGateway` : accès réel (compte de service) ; traduit les erreurs Google (403 partage, 404, 429 quota…) en messages actionnables ; met en forme les onglets créés (en-tête figé, liste déroulante pour `kind`).
+  - `GSpreadGateway` : accès réel (compte de service) ; **journalise chaque étape avec sa durée** (`_step`) et traduit toute erreur en message actionnable via `explain_google_error` (API non activée + lien, partage, ID faux, `.xlsx`, quota, clé révoquée, horloge, réseau…) ; met en forme les onglets créés.
+  - `resolve_settings` (d'où viennent les paramètres), `extract_spreadsheet_id`, `normalize_service_account` (corrige les `\\n` littéraux), `describe_service_account` (résumé **sans secret**).
   - `build_store(secrets, env, local)` : choisit le backend (voir §6). Lève `StorageError` si Google Sheets est configuré mais inutilisable.
+
+### `converter/logs.py` — Journalisation
+- **Rôle** : rendre chaque exécution traçable sans jamais fuiter de secret.
+- **Contenu clé** : `redact()` (masque clés PEM, `private_key`, jetons `ya29.`, JWT, en-têtes Authorization) ; `RedactingFormatter` ; `RingBufferHandler` (2000 dernières lignes, lues par l'UI) ; `setup_logging()` **idempotent** (console, `logs/converter.log` rotatif, tampon) branché sur les loggers `converter`, `urllib3.connectionpool`, `google.auth`, `gspread` (les requêtes HTTP deviennent visibles) ; `get_entries` / `entries_text` / `clear_entries`. Niveau console : variable `LOG_LEVEL` (DEBUG par défaut).
+
+### `converter/diagnostics.py` — Diagnostic de connexion (pur)
+- **Rôle** : localiser le premier maillon défaillant de la chaîne secrets → clé → réseau → jeton → Sheet → onglets → lecture → écriture.
+- **Contenu clé** : `Step` (statut `ok/warn/error/skip/info`, détail, piste, durée, trace) ; `run_diagnostics()` : étapes de type `chain` (ignorées après un échec) ou `config` (réseau et horloge, testés dès que Sheets est configuré) ; `inspect_secrets_files()` / `secrets_toml_problem()` (Streamlit lève **la même erreur** pour un `secrets.toml` absent ou invalide : on relit le TOML nous-mêmes pour donner ligne/colonne) ; `report_text()` (rapport partageable, secrets masqués). `diagnostics_ui.py` n'est que l'affichage (`@st.dialog`, onglets Diagnostic et Journal, téléchargements).
 
 ### `converter/models.py` — Modèle de données
 - **Rôle** : structure commune entre parseur, UI et rapprochement.
@@ -145,7 +157,7 @@ shopify-invoice-converter/
 Référence de la **structure** Shopify (57 colonnes). Seul l'en-tête est utilisé par le code.
 
 ### `tests/test_pipeline.py`
-Couvre : stockage Google Sheets (passerelle simulée : amorçage, aller-retour, cache, écritures minimales, édition directe, erreurs de colonnes, choix du backend), parsing (multi-lignes, Gencod, profil simple, détection automatique de profil), santé de la config, titres sans doublon de type, normalisation des tailles, génération CSV (regroupement, titres roues, type wallet), rapprochement OK/KO, validations de config, aller-retour `save_json`. Aucun test ne touche l'interface Streamlit ni de vrai PDF.
+Couvre : masquage des secrets dans les logs, diagnostic (premier blocage, étapes ignorées, `secrets.toml` invalide ou mal nommé), traduction des erreurs Google, stockage Google Sheets (passerelle simulée : amorçage, aller-retour, cache, écritures minimales, édition directe, erreurs de colonnes, choix du backend), parsing (multi-lignes, Gencod, profil simple, détection automatique de profil), santé de la config, titres sans doublon de type, normalisation des tailles, génération CSV (regroupement, titres roues, type wallet), rapprochement OK/KO, validations de config, aller-retour `save_json`. Aucun test ne touche l'interface Streamlit ni de vrai PDF.
 
 ---
 
@@ -179,6 +191,11 @@ graph TD
     TESTS["tests/test_pipeline.py"]
 
     APP --> CUI
+    APP --> DIAGUI["converter/diagnostics_ui.py"]
+    DIAGUI --> DIAG["converter/diagnostics.py"]
+    DIAG --> STORE
+    DIAG --> LOGS["converter/logs.py"]
+    APP --> LOGS
     APP --> CFG
     APP --> MOD
     APP --> PARS
@@ -243,6 +260,8 @@ Bouton 🛠️ → `config_dialog()` → édition → validation (`validate_*`) 
 ### Bonnes pratiques
 - **Séparation des couches** : l'UI (`app.py`, `config_ui.py`) n'embarque aucune règle métier ; les modules `converter/*` (hors `config_ui`) **n'importent pas Streamlit**. Conservez cette règle, elle rend le code testable.
 - **Une seule porte d'entrée pour la config** : tout accès passe par `config.load_json` / `save_json` ; n'ouvrez jamais `config/*.json` ni gspread depuis l'UI ou le métier. Un nouveau backend = une classe respectant `ConfigStore` + une branche dans `build_store`.
+- **Logs** : utilisez `logging.getLogger("converter.<module>")` (jamais `print`) ; ne journalisez jamais un secret brut (`redact` est un filet de sécurité, pas une excuse) ; décrivez un compte de service avec `describe_service_account`.
+- **Erreurs de config à toute épreuve** : n'avalez jamais une exception de lecture des secrets/config sans la journaliser et l'afficher (c'est ce qui cachait un `secrets.toml` invalide).
 - **Quota Google** : ne contournez pas le cache de `SheetsStore` (limite ≈ 60 lectures/min/utilisateur) ; ajoutez de nouveaux champs en les rangeant dans un onglet existant ou en étendant `SHEET_SCHEMAS`/`DOC_SHEETS` **et** les deux fonctions de conversion.
 - **Données avant code** : une marque, une couleur, un type ou un mapping se modifie dans `config/*.json` (ou via 🛠️), pas dans le code.
 - **Messages d'erreur utilisateur** : levez `PdfExtractionError` (ou `ValueError` avec message clair) ; `app.py` les affiche, ne les masquez pas par un `except` silencieux.
@@ -287,6 +306,7 @@ Bouton 🛠️ → `config_dialog()` → édition → validation (`validate_*`) 
 | `[gcp_service_account]` | `.streamlit/secrets.toml` | Clé JSON du compte de service Google |
 | `[config_sheet] spreadsheet` | `.streamlit/secrets.toml` | URL ou ID du Google Sheet |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | variable d'env. | Alternative : contenu de la clé JSON |
+| `LOG_LEVEL` | variable d'env. | Niveau de la console (`DEBUG` par défaut) |
 | `CONFIG_SHEET_ID` | variable d'env. | Alternative : ID/URL du Sheet |
 | `CONFIG_BACKEND=json` | variable d'env. | Force les fichiers JSON locaux |
 

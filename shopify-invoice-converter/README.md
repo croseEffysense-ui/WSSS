@@ -19,6 +19,7 @@ pytest            # tests
 app.py                      # interface Streamlit (2 onglets)
 converter/
   storage.py                # backends de config : JSON local / Google Sheets
+  logs.py / diagnostics.py  # journalisation (secrets masqués) / diagnostic pas à pas
   pdf_parser.py             # PDF -> lignes (SKU, description, qté, prix, EAN)
   normalizer.py             # règles métier : marque, type, titre, options, prix, poids
   shopify_builder.py        # lignes -> CSV (colonnes du template, variantes, consolidation)
@@ -57,6 +58,24 @@ Par défaut la config vit dans `config/*.json`. Pour la partager en équipe et l
 
 Vous pouvez éditer **dans le Sheet** (nouvelles lignes, suppression, modification ; l'ordre des colonnes est libre, ne renommez pas les en-têtes) **ou dans l'app** (🛠️ Gérer la configuration). L'app relit le Sheet toutes les ~30 s, ou immédiatement via **🔄 Recharger**.
 `CONFIG_BACKEND=json` force le mode local. Si Google Sheets est configuré mais inaccessible, l'app affiche l'erreur et bascule sur les JSON locaux.
+
+## Dépannage de la connexion Google Sheets
+
+Cliquez sur **🩺 Diagnostic & journal** (barre latérale) puis **▶️ Lancer le diagnostic** : l'application teste chaque maillon dans l'ordre et désigne **le premier blocage** avec une piste de résolution.
+
+| Étape testée | Panne typique détectée |
+|---|---|
+| Fichiers `secrets.toml` | fichier absent, mal nommé (`secrets.toml.txt`), **TOML invalide** (ligne/colonne indiquées) |
+| Choix du backend / champs du compte de service | section manquante, `type` ≠ `service_account`, clé incomplète |
+| Clé privée lisible | `private_key` corrompue ou `\n` mal collés (corrigés automatiquement si littéraux) |
+| Réseau / horloge | pare-feu, proxy, VPN, horloge décalée |
+| Jeton OAuth | clé révoquée ou supprimée, horloge |
+| Accès au Sheet | **API Google Sheets non activée** (lien direct fourni), Sheet non partagé avec le compte de service, ID/URL faux, fichier `.xlsx` non converti |
+| Onglets / en-têtes | onglet manquant, colonne renommée |
+| Droit d'écriture (option) | Sheet partagé en « Lecteur » au lieu d'« Éditeur » |
+
+L'onglet **Journal d'exécution** affiche tous les logs (niveau DEBUG compris, requêtes HTTP incluses). Ils sont aussi écrits dans la console et dans `logs/converter.log`. **Les secrets (clé privée, jetons) sont masqués automatiquement.** Les deux boutons « Télécharger » produisent un rapport/journal que vous pouvez partager sans risque. `LOG_LEVEL=INFO` réduit le bruit de la console.
+Après correction, cliquez sur **🔁 Réessayer la connexion**.
 
 ## À compléter avant la première vraie utilisation
 - `product_type_mapping.json` : seule la correspondance `wallet → Porte Feuille` est renseignée ; les autres
