@@ -4,7 +4,7 @@ Application Streamlit qui convertit un PDF fournisseur (facture ou bon de livrai
 et rapproche un Bon de Commande (PO) d'un Bon de Livraison (BL).
 
 ## Parcours utilisateur
-1. **Déposer** le PDF (format des colonnes détecté automatiquement) → 2. **Vérifier** les lignes dans un tableau éditable (indicateurs et alertes) → 3. **Télécharger** le CSV. L'onglet *Rapprochement* compare un PO et un BL ligne par ligne.
+1. **Déposer** le PDF et choisir le **format fournisseur** (ou laisser la détection automatique) → 2. **Vérifier** les lignes dans un tableau éditable (indicateurs et alertes) → 3. **Télécharger** le CSV. L'onglet *Rapprochement* compare un PO et un BL ligne par ligne.
 
 ## Lancer
 ```bash
@@ -24,17 +24,26 @@ converter/
   normalizer.py             # règles métier : marque, type, titre, options, prix, poids
   shopify_builder.py        # lignes -> CSV (colonnes du template, variantes, consolidation)
   reconciliation.py         # PO vs BL
+  formats.py                # formats de factures par fournisseur (colonnes, validation)
   config.py / models.py
 config/                     # À COMPLÉTER (voir ci-dessous)
   product_rules.json        # marques, couleurs, mots-clés de types
   product_type_mapping.json # type_key -> Product Type Shopify exact
   collections.json          # liste blanche des collections
+  supplier_formats.json     # formats de factures / BL par fournisseur
 data/product_template.csv   # template Shopify (ordre des colonnes)
 tests/
 ```
 
+## Formats de factures par fournisseur
+Chaque fournisseur a sa façon de présenter les colonnes chiffrées d'une ligne article. Un **format** décrit ces colonnes, **de gauche à droite** (jusqu'à 5 : Qté, PU HT (brut), PU Net, Total, Prix public TTC ; la Qté est obligatoire).
+
+**🛠️ Gérer la configuration → Formats fournisseurs** : ajoutez une ligne par fournisseur (nom + *Colonne 1…5*), modifiez ou supprimez-en, puis **💾 Enregistrer**. Les formats enregistrés alimentent la liste **« Format fournisseur »** (conversion et rapprochement PO/BL) et la détection automatique. Les 4 formats fournis sont des exemples : renommez-les au nom de vos fournisseurs.
+
+Dans Google Sheets : onglet `supplier_formats` (colonnes `name`, `columns`, `notes`) ; `columns` est une liste séparée par des virgules, p. ex. `Qté, PU Net, Total` (variantes acceptées : `qty`, `quantité`, `pu ht`, `prix public`…).
+
 ## Gérer la configuration depuis l'interface
-Bouton **🛠️ Gérer la configuration** dans la barre latérale : consultation, ajout et suppression d'éléments (marques, couleurs, types de produit, mapping Product Type, collections), validation avant sauvegarde, vue et export du JSON brut. Les fichiers `config/*.json` sont réécrits : pensez à les committer.
+Bouton **🛠️ Gérer la configuration** dans la barre latérale : consultation, ajout et suppression d'éléments (formats fournisseurs, marques, couleurs, types de produit, mapping Product Type, collections), validation avant sauvegarde, vue et export du JSON brut. Les fichiers `config/*.json` sont réécrits : pensez à les committer.
 
 ## Stocker la configuration dans Google Sheets (optionnel)
 
@@ -55,6 +64,7 @@ Par défaut la config vit dans `config/*.json`. Pour la partager en équipe et l
 | `type_mapping` | `type_key`, `product_type` | Association → Product Type Shopify exact |
 | `collections_allowed` | `collection` | Liste blanche |
 | `collections_by_type` | `type_key`, `collection` | Type → collection |
+| `supplier_formats` | `name`, `columns`, `notes` | Formats de factures par fournisseur |
 
 Vous pouvez éditer **dans le Sheet** (nouvelles lignes, suppression, modification ; l'ordre des colonnes est libre, ne renommez pas les en-têtes) **ou dans l'app** (🛠️ Gérer la configuration). L'app relit le Sheet toutes les ~30 s, ou immédiatement via **🔄 Recharger**.
 `CONFIG_BACKEND=json` force le mode local. Si Google Sheets est configuré mais inaccessible, l'app affiche l'erreur et bascule sur les JSON locaux.

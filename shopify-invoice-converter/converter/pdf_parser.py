@@ -2,7 +2,7 @@
 
 Approche : on découpe le texte en « blocs » (un bloc = un SKU + ses lignes de
 description + sa queue numérique), puis on mappe les nombres de fin de bloc sur
-un profil de colonnes (voir config.PROFILES). Tolère : décimales virgule/point,
+un profil de colonnes (format fournisseur, voir formats.py et config/supplier_formats.json). Tolère : décimales virgule/point,
 symbole €, quantité seule sur une ligne, description multiligne, en-têtes de page
 répétés, EAN/Gencod dans le bloc.
 """

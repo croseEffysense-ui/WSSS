@@ -10,7 +10,8 @@ import pandas as pd
 import streamlit as st
 
 from .config import get_store, load_json, save_json
-from .storage import VALID_KINDS
+from .formats import FIELD_LABELS, MAX_COLUMNS, field_key, profiles_from_doc, validate_format
+from .storage import DOC_FORMATS, VALID_KINDS
 
 KINDS = VALID_KINDS
 KIND_HELP = (
@@ -98,6 +99,35 @@ def validate_collections(allowed_df: pd.DataFrame, by_df: pd.DataFrame) -> tuple
         else:
             by_type[key] = coll
     return {"allowed": allowed, "by_type_key": by_type}, errors
+
+
+FORMAT_COLUMNS = [f"Colonne {i}" for i in range(1, MAX_COLUMNS + 1)]
+
+
+def _cell(value) -> str:
+    return "" if value is None or (isinstance(value, float) and pd.isna(value)) else str(value).strip()
+
+
+def validate_formats(df: pd.DataFrame) -> tuple[list[dict], list[str]]:
+    """Tableau éditable (name, Colonne 1..N, notes) -> (formats à enregistrer, erreurs)."""
+    formats: list[dict] = []
+    errors: list[str] = []
+    names: set[str] = set()
+    for n, (_, r) in enumerate(df.iterrows(), start=1):
+        name, notes = _cell(r.get("name")), _cell(r.get("notes"))
+        labels = [_cell(r.get(c)) for c in FORMAT_COLUMNS]
+        columns = [field_key(lb) or lb.lower() for lb in labels if lb]  # cases vides ignorées : l'ordre reste celui de lecture
+        if not (name or columns or notes):
+            continue  # ligne vide
+        errors += [f"Ligne {n} : {e}" for e in validate_format(name, columns)]
+        if name:
+            if name.lower() in names:
+                errors.append(f"Ligne {n} : fournisseur « {name} » en double")
+            names.add(name.lower())
+        formats.append({"name": name, "columns": columns, "notes": notes})
+    if not formats and not errors:
+        errors.append("Définissez au moins un format (sinon aucun PDF ne pourra être analysé)")
+    return formats, errors
 
 
 # ----------------------------- Helpers UI -----------------------------
@@ -216,12 +246,52 @@ def _collections_tab() -> None:
             st.rerun()
 
 
+def _formats_tab() -> None:
+    doc = load_json(DOC_FORMATS)
+    _, problems = profiles_from_doc(doc)
+    st.caption(
+        "Un format par fournisseur. **Colonne 1 → 5** = colonnes numériques à la fin d'une ligne article, "
+        "**de gauche à droite** comme sur la facture (laissez vide les cases inutilisées). "
+        "Le format est ensuite proposé dans la liste « Format fournisseur » lors de l'analyse d'un PDF."
+    )
+    for p in problems:
+        st.warning(p)
+    rows = []
+    for f in doc.get("formats", []):
+        cols = [FIELD_LABELS.get(c) for c in f.get("columns", [])]
+        row = {"name": f.get("name", "")}
+        row.update({c: (cols[i] if i < len(cols) else None) for i, c in enumerate(FORMAT_COLUMNS)})
+        row["notes"] = f.get("notes", "")
+        rows.append(row)
+    df = pd.DataFrame(rows, columns=["name", *FORMAT_COLUMNS, "notes"])
+    options = list(FIELD_LABELS.values())
+    edited = st.data_editor(
+        df,
+        num_rows="dynamic",
+        width="stretch",
+        key="ed_formats",
+        column_config={
+            "name": st.column_config.TextColumn("Fournisseur / format", required=True),
+            **{c: st.column_config.SelectboxColumn(c, options=options) for c in FORMAT_COLUMNS},
+            "notes": st.column_config.TextColumn("Notes"),
+        },
+    )
+    if st.button("💾 Enregistrer les formats", key="save_formats"):
+        formats, errors = validate_formats(edited)
+        if errors:
+            _show_errors(errors)
+        elif _save(DOC_FORMATS, {**doc, "formats": formats}, doc):
+            st.rerun()
+
+
 @st.dialog("⚙️ Configuration métier", width="large")
 def config_dialog() -> None:
     """Fenêtre de consultation/édition des fichiers de config."""
-    t_brands, t_colors, t_types, t_map, t_coll, t_raw = st.tabs(
-        ["Marques", "Couleurs", "Types de produit", "Mapping Product Type", "Collections", "JSON brut"]
+    t_formats, t_brands, t_colors, t_types, t_map, t_coll, t_raw = st.tabs(
+        ["Formats fournisseurs", "Marques", "Couleurs", "Types de produit", "Mapping Product Type", "Collections", "JSON brut"]
     )
+    with t_formats:
+        _formats_tab()
     with t_brands:
         _list_editor("Marques", "product_rules.json", "brands", "Marque")
     with t_colors:
@@ -233,7 +303,7 @@ def config_dialog() -> None:
     with t_coll:
         _collections_tab()
     with t_raw:
-        name = st.selectbox("Fichier", ["product_rules.json", "product_type_mapping.json", "collections.json"])
+        name = st.selectbox("Fichier", ["product_rules.json", "product_type_mapping.json", "collections.json", DOC_FORMATS])
         text = json.dumps(load_json(name), ensure_ascii=False, indent=2)
         st.code(text, language="json")
         st.download_button("📥 Télécharger", text.encode("utf-8"), file_name=name, mime="application/json")

@@ -1,4 +1,4 @@
-from converter.config import PROFILES, load_json, template_columns
+from converter.config import load_json, load_profiles, template_columns
 from converter.normalizer import normalize_item, normalize_size
 from converter.pdf_parser import parse_text
 from converter.reconciliation import reconcile
@@ -7,6 +7,7 @@ from converter.shopify_builder import build_dataframe
 RULES = load_json("product_rules.json")
 MAPPING = load_json("product_type_mapping.json")
 COLL = load_json("collections.json")
+PROFILES, _ = load_profiles()
 BL = PROFILES["BL complet (Qté, PU HT, PU Net, Total, Prix public TTC)"]
 
 SAMPLE = """Page 1
@@ -162,7 +163,7 @@ def test_sheets_seed_and_roundtrip_equals_local():
     from converter.storage import ALL_SHEETS, SheetsStore
     gw = FakeGateway()
     store = SheetsStore(gw, seed=_local())
-    for doc in ("product_rules.json", "product_type_mapping.json", "collections.json"):
+    for doc in ("product_rules.json", "product_type_mapping.json", "collections.json", "supplier_formats.json"):
         assert store.load(doc) == _strip(_local().load(doc))
     assert set(gw.sheets) == set(ALL_SHEETS)  # onglets créés et pré-remplis
 
@@ -320,3 +321,86 @@ def test_misnamed_secrets_file_is_visible(tmp_path, monkeypatch):
     (tmp_path / ".streamlit" / "secrets.toml.txt").write_text("a = 1", encoding="utf-8")
     f = [x for x in inspect_secrets_files() if x.path.parent.parent == tmp_path][0]
     assert not f.exists and "secrets.toml.txt" in f.siblings
+
+
+# ----------------------------- Formats fournisseurs -----------------------------
+def test_shipped_formats_are_all_valid():
+    from converter.config import config_health
+    profiles, problems = load_profiles()
+    assert len(profiles) == 4 and not problems
+    assert not any("format" in i.lower() for i in config_health(RULES, MAPPING, COLL, _local().load("supplier_formats.json")))
+
+
+def test_field_key_accepts_labels_keys_and_aliases():
+    from converter.formats import columns_from_text, columns_to_text, field_key
+    assert field_key("Qté") == "qty" and field_key("PU HT (brut)") == "unit_price_gross" and field_key("pu") == "unit_price_net"
+    assert field_key("Prix public TTC") == "public_price" and field_key("total_ht") == "total" and field_key("n'importe quoi") is None
+    cols = columns_from_text("Qté, PU Net, Total")
+    assert cols == ["qty", "unit_price_net", "total"] and columns_from_text(columns_to_text(cols)) == cols
+    assert columns_from_text("qty, bidule") == ["qty", "bidule"]  # inconnu conservé pour être signalé
+
+
+def test_validate_format_rules():
+    from converter.formats import validate_format
+    assert validate_format("DGK", ["qty", "total"]) == []
+    assert any("indispensable" in e for e in validate_format("X", ["total"]))
+    assert any("double" in e for e in validate_format("X", ["qty", "qty"]))
+    assert any("inconnue" in e for e in validate_format("X", ["qty", "bidule"]))
+    assert any("requis" in e for e in validate_format("", ["qty"])) and any("au moins" in e for e in validate_format("X", []))
+
+
+def test_profiles_from_doc_skips_invalid_and_duplicates_with_report():
+    from converter.formats import profiles_from_doc
+    doc = {"formats": [
+        {"name": "A", "columns": ["qty", "total"]},
+        {"name": "a", "columns": ["qty"]},  # doublon (casse ignorée)
+        {"name": "B", "columns": ["total"]},  # sans Qté
+        {"name": "", "columns": ["qty"]},  # sans nom
+    ]}
+    profiles, problems = profiles_from_doc(doc)
+    assert profiles == {"A": ["qty", "total"]} and len(problems) == 3
+
+
+def test_new_supplier_format_is_used_for_parsing():
+    from converter.formats import profiles_from_doc
+    profiles, _ = profiles_from_doc({"formats": [{"name": "Fournisseur X", "columns": ["qty", "public_price", "unit_price_net"]}]})
+    item = parse_text("AB-CD-1 Tee 2 39,90 15,00\n", profiles["Fournisseur X"])[0]
+    assert item.qty == 2 and item.public_price == 39.9 and item.unit_price_net == 15.0
+
+
+def test_validate_formats_table():
+    import pandas as pd
+    from converter.config_ui import FORMAT_COLUMNS, validate_formats
+
+    def row(name, *cols, notes=""):
+        return {"name": name, **{c: (cols[i] if i < len(cols) else None) for i, c in enumerate(FORMAT_COLUMNS)}, "notes": notes}
+
+    ok, errs = validate_formats(pd.DataFrame([row("DGK", "Qté", None, "PU Net", "Total", notes="2025"), row(None)]))
+    assert not errs and ok == [{"name": "DGK", "columns": ["qty", "unit_price_net", "total"], "notes": "2025"}]  # trou compacté, ligne vide ignorée
+
+    _, errs = validate_formats(pd.DataFrame([row("A", "Qté"), row("a", "Total"), row("", "Qté", "Qté")]))
+    assert len(errs) == 4  # doublon de nom, Qté manquante, nom requis, colonne en double
+
+    _, errs = validate_formats(pd.DataFrame([row(None)]))
+    assert any("au moins un format" in e for e in errs)
+
+
+def test_sheets_formats_roundtrip_and_hand_edit():
+    from converter.storage import SheetsStore
+    gw = FakeGateway()
+    store = SheetsStore(gw, seed=_local())
+    doc = store.load("supplier_formats.json")
+    doc["formats"].append({"name": "Spitfire", "columns": ["qty", "unit_price_net"], "notes": "BL 2025"})
+    store.save("supplier_formats.json", doc)
+    assert gw.writes[-1] == "supplier_formats" and gw.sheets["supplier_formats"][-1] == ["Spitfire", "Qté, PU Net", "BL 2025"]
+    # édition à la main dans le Sheet : libellés libres, ordre des colonnes libre
+    gw.sheets["supplier_formats"] = [["notes", "columns", "name"], ["", "quantité, pu ht, total", "Vans"]]
+    store.refresh()
+    assert store.load("supplier_formats.json") == {"formats": [{"name": "Vans", "columns": ["qty", "unit_price_gross", "total"], "notes": ""}]}
+
+
+def test_local_save_formats_roundtrip(tmp_path):
+    from converter.storage import LocalJsonStore
+    store = LocalJsonStore(tmp_path)
+    store.save("supplier_formats.json", {"formats": [{"name": "É", "columns": ["qty"], "notes": ""}]})
+    assert store.load("supplier_formats.json")["formats"][0]["name"] == "É"

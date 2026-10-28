@@ -9,10 +9,11 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from converter.config import CONFIG_DIR, PROFILES, config_health, get_store, load_json, set_store, template_columns
+from converter.config import CONFIG_DIR, config_health, get_store, load_json, load_profiles, set_store, template_columns
 from converter.config_ui import config_dialog
 from converter.diagnostics import secrets_toml_problem
 from converter.diagnostics_ui import diagnostic_dialog
+from converter.formats import FIELD_LABELS
 from converter.logs import setup_logging
 from converter.models import LineItem, df_to_items, items_to_df
 from converter.normalizer import normalize_item
@@ -76,14 +77,18 @@ def _read_text(file_bytes: bytes) -> str:
     return extract_text(io.BytesIO(file_bytes))
 
 
-def _parse_document(file_bytes: bytes, choice: str) -> tuple[str, list[LineItem]]:
-    """Retourne (nom du profil utilisé, lignes). Lève PdfExtractionError avec un message lisible."""
+def _parse_document(file_bytes: bytes, choice: str, profiles: dict[str, list[str]]) -> tuple[str, list[LineItem]]:
+    """Retourne (nom du format fournisseur utilisé, lignes). Lève PdfExtractionError avec un message lisible."""
+    if not profiles:
+        raise PdfExtractionError("Aucun format fournisseur enregistré : ajoutez-en un dans 🛠️ Gérer la configuration.")
     text = _read_text(file_bytes)
     if choice == AUTO:
-        return detect_profile(text, PROFILES)
-    items = parse_text(text, PROFILES[choice])
+        return detect_profile(text, profiles)
+    if choice not in profiles:
+        raise PdfExtractionError(f"Le format « {choice} » n'existe plus : choisissez-en un autre.")
+    items = parse_text(text, profiles[choice])
     if not items:
-        raise PdfExtractionError("Aucun article détecté avec ce format. Essayez la détection automatique.")
+        raise PdfExtractionError("Aucun article détecté avec ce format. Essayez un autre format ou la détection automatique.")
     return choice, items
 
 
@@ -137,6 +142,8 @@ try:
     rules = load_json("product_rules.json")
     type_mapping = load_json("product_type_mapping.json")
     collections = load_json("collections.json")
+    formats_doc = load_json("supplier_formats.json")
+    profiles, _format_problems = load_profiles()
     columns = template_columns(template_upload.getvalue() if template_upload else None)
 except (OSError, ValueError) as exc:  # inclut FileNotFoundError et StorageError
     log.error("Chargement de la configuration impossible : %s", exc, exc_info=True)
@@ -145,12 +152,12 @@ except (OSError, ValueError) as exc:  # inclut FileNotFoundError et StorageError
 
 with st.sidebar:
     st.divider()
-    health = config_health(rules, type_mapping, collections)
+    health = config_health(rules, type_mapping, collections, formats_doc)
     if health:
         st.warning(f"**{len(health)} point(s) de configuration à compléter**\n\n" + "\n".join(f"- {h}" for h in health))
     else:
         st.success("Configuration complète ✅")
-    if st.button("🛠️ Gérer la configuration", width="stretch", help="Marques, couleurs, types, mapping, collections"):
+    if st.button("🛠️ Gérer la configuration", width="stretch", help="Formats fournisseurs, marques, couleurs, types, mapping, collections"):
         config_dialog()
     with st.expander("❓ Aide"):
         st.markdown(
@@ -167,9 +174,10 @@ def render_convert() -> None:
     col_up, col_fmt = st.columns([3, 2])
     pdf = col_up.file_uploader("Facture / BL fournisseur (PDF)", type=["pdf"], key="invoice")
     choice = col_fmt.selectbox(
-        "Format des colonnes",
-        [AUTO, *PROFILES],
-        help="Laissez « détection automatique » sauf si l'extraction est incorrecte.",
+        "Format fournisseur",
+        [AUTO, *profiles],
+        help="Formats enregistrés dans 🛠️ Gérer la configuration → Formats fournisseurs. "
+        "« Détection automatique » teste chacun d'eux et retient le plus cohérent.",
     )
     if not pdf:
         st.info("👆 Déposez un PDF pour commencer. Le fichier reste sur cette session et n'est pas conservé.")
@@ -177,7 +185,7 @@ def render_convert() -> None:
 
     try:
         with st.spinner("Analyse du PDF…"):
-            profile_name, items = _parse_document(pdf.getvalue(), choice)
+            profile_name, items = _parse_document(pdf.getvalue(), choice, profiles)
     except PdfExtractionError as exc:
         st.error(str(exc))
         return
@@ -187,7 +195,7 @@ def render_convert() -> None:
 
     st.subheader("Étape 2 · Vérifiez les lignes extraites")
     st.caption(
-        f"Format utilisé : **{profile_name}** · Modifiez une cellule en double-cliquant, "
+        f"Format utilisé : **{profile_name}** ({' → '.join(FIELD_LABELS[c] for c in profiles[profile_name])}) · Modifiez une cellule en double-cliquant, "
         "ajoutez une ligne avec ➕ en bas, supprimez en cochant la ligne puis 🗑️."
     )
     edited = st.data_editor(
@@ -250,15 +258,15 @@ def render_reconcile() -> None:
     po_file = c1.file_uploader("1 · Bon de commande (PDF)", type=["pdf"], key="po")
     bl_file = c2.file_uploader("2 · Bon de livraison (PDF ou CSV)", type=["pdf", "csv"], key="bl")
     with st.expander("Options avancées"):
-        po_choice = st.selectbox("Format du PO", [AUTO, *PROFILES], key="po_fmt")
-        bl_choice = st.selectbox("Format du BL (PDF)", [AUTO, *PROFILES], key="bl_fmt")
+        po_choice = st.selectbox("Format fournisseur du PO", [AUTO, *profiles], key="po_fmt")
+        bl_choice = st.selectbox("Format fournisseur du BL (PDF)", [AUTO, *profiles], key="bl_fmt")
 
     if not (po_file and bl_file):
         st.info("👆 Déposez les deux documents pour lancer le rapprochement.")
         return
 
     try:
-        _, po_items = _parse_document(po_file.getvalue(), po_choice)
+        _, po_items = _parse_document(po_file.getvalue(), po_choice, profiles)
         if bl_file.name.lower().endswith(".csv"):
             bl_df = pd.read_csv(bl_file, dtype=str)
             cols = list(bl_df.columns)
@@ -269,7 +277,7 @@ def render_reconcile() -> None:
                 LineItem(sku=str(r[sku_col]).strip(), qty=int(float(r[qty_col] or 0))) for _, r in bl_df.iterrows()
             ]
         else:
-            _, bl_items = _parse_document(bl_file.getvalue(), bl_choice)
+            _, bl_items = _parse_document(bl_file.getvalue(), bl_choice, profiles)
     except PdfExtractionError as exc:
         st.error(str(exc))
         return

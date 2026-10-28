@@ -21,12 +21,15 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterator, Mapping, Optional, Protocol
 
+from .formats import columns_from_text, columns_to_text
+
 log = logging.getLogger("converter.storage")
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 DOC_RULES = "product_rules.json"
 DOC_MAPPING = "product_type_mapping.json"
 DOC_COLLECTIONS = "collections.json"
+DOC_FORMATS = "supplier_formats.json"
 
 # Onglet -> colonnes attendues (l'ordre dans le Sheet est libre, les noms comptent)
 SHEET_SCHEMAS: dict[str, list[str]] = {
@@ -37,11 +40,13 @@ SHEET_SCHEMAS: dict[str, list[str]] = {
     "type_mapping": ["type_key", "product_type"],
     "collections_allowed": ["collection"],
     "collections_by_type": ["type_key", "collection"],
+    "supplier_formats": ["name", "columns", "notes"],
 }
 DOC_SHEETS: dict[str, list[str]] = {
     DOC_RULES: ["brands", "colors", "product_types", "settings"],
     DOC_MAPPING: ["type_mapping"],
     DOC_COLLECTIONS: ["collections_allowed", "collections_by_type"],
+    DOC_FORMATS: ["supplier_formats"],
 }
 ALL_SHEETS = list(SHEET_SCHEMAS)
 VALID_KINDS = ["deck", "wheel", "apparel", "cap", "other"]
@@ -170,6 +175,14 @@ def sheets_to_doc(name: str, sheets: Mapping[str, Rows]) -> dict:
             "allowed": [r["collection"] for r in t("collections_allowed") if r["collection"]],
             "by_type_key": {r["type_key"]: r["collection"] for r in t("collections_by_type") if r["type_key"] and r["collection"]},
         }
+    if name == DOC_FORMATS:
+        return {
+            "formats": [
+                {"name": r["name"], "columns": columns_from_text(r["columns"]), "notes": r["notes"]}
+                for r in t("supplier_formats")
+                if r["name"]
+            ]
+        }
     raise StorageError(f"Document de configuration inconnu : {name}")
 
 
@@ -195,6 +208,13 @@ def doc_to_sheets(name: str, data: Mapping) -> dict[str, Rows]:
         return {
             "collections_allowed": sheet("collections_allowed", [[c] for c in data.get("allowed", [])]),
             "collections_by_type": sheet("collections_by_type", [[k, v] for k, v in data.get("by_type_key", {}).items()]),
+        }
+    if name == DOC_FORMATS:
+        return {
+            "supplier_formats": sheet(
+                "supplier_formats",
+                [[f.get("name", ""), columns_to_text(f.get("columns", [])), f.get("notes", "")] for f in data.get("formats", [])],
+            )
         }
     raise StorageError(f"Document de configuration inconnu : {name}")
 

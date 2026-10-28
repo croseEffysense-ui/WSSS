@@ -7,7 +7,8 @@ from typing import Optional
 
 import pandas as pd
 
-from .storage import VALID_KINDS, ConfigStore, LocalJsonStore
+from .formats import profiles_from_doc
+from .storage import DOC_FORMATS, VALID_KINDS, ConfigStore, LocalJsonStore
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_DIR = BASE_DIR / "config"
@@ -18,18 +19,6 @@ TAG_NEW = "nouveautés"
 WEIGHT_NORMAL_G = 500  # 0.5 kg
 WEIGHT_DECK_G = 1000  # 1 kg
 WEIGHT_UNIT = "kg"
-
-# Profils de colonnes numériques en fin de ligne article (ordre de lecture gauche -> droite)
-PROFILES: dict[str, list[str]] = {
-    "Facture simple (Qté, PU HT, Total)": ["qty", "unit_price_net", "total"],
-    "BL complet (Qté, PU HT, PU Net, Total, Prix public TTC)": [
-        "qty", "unit_price_gross", "unit_price_net", "total", "public_price",
-    ],
-    "BL (Qté, PU HT, PU Net, Prix public TTC)": [
-        "qty", "unit_price_gross", "unit_price_net", "public_price",
-    ],
-    "Bon de commande (Qté, PU)": ["qty", "unit_price_net"],
-}
 
 # Colonnes Shopify de secours si aucun template n'est disponible
 FALLBACK_COLUMNS = list(pd.read_csv(DEFAULT_TEMPLATE, nrows=0).columns) if DEFAULT_TEMPLATE.exists() else []
@@ -58,9 +47,22 @@ def save_json(name: str, data: dict) -> None:
     get_store().save(name, data)
 
 
-def config_health(rules: dict, mapping: dict, collections: dict) -> list[str]:
-    """Points de configuration à compléter (liste vide = tout est prêt)."""
+def load_profiles() -> tuple[dict[str, list[str]], list[str]]:
+    """Formats fournisseurs enregistrés -> ({nom: colonnes numériques ordonnées}, problèmes de config)."""
+    return profiles_from_doc(load_json(DOC_FORMATS))
+
+
+def config_health(rules: dict, mapping: dict, collections: dict, formats: Optional[dict] = None) -> list[str]:
+    """Points de configuration à compléter (liste vide = tout est prêt).
+
+    `formats` (document supplier_formats) est optionnel : s'il est fourni, les formats fournisseurs sont contrôlés.
+    """
     issues: list[str] = []
+    if formats is not None:
+        profiles, problems = profiles_from_doc(formats)
+        if not profiles:
+            issues.append("Aucun format de facture fournisseur valide")
+        issues.extend(problems)
     if not rules.get("brands"):
         issues.append("Aucune marque définie")
     missing = [r["type_key"] for r in rules.get("product_types", []) if not mapping.get(r["type_key"])]

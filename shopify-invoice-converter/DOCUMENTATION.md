@@ -37,7 +37,8 @@ shopify-invoice-converter/
 ├── app.py                          # Point d'entrée Streamlit (UI + orchestration)
 ├── converter/                      # Package métier
 │   ├── __init__.py
-│   ├── config.py                   # Constantes, profils, façade load/save vers le backend actif, colonnes template
+│   ├── config.py                   # Constantes, façade load/save vers le backend actif, `load_profiles`, colonnes template
+│   ├── formats.py                  # Formats fournisseurs : colonnes numériques, alias, validation (pur)
 │   ├── storage.py                  # Backends de config : JSON local / Google Sheets (gspread)
 │   ├── logs.py                     # Journalisation : console + fichier + tampon mémoire, masquage des secrets
 │   ├── diagnostics.py              # Diagnostic pas à pas de la connexion Google Sheets (pur)
@@ -51,7 +52,8 @@ shopify-invoice-converter/
 ├── config/                         # Règles métier éditables (versionnées)
 │   ├── product_rules.json
 │   ├── product_type_mapping.json
-│   └── collections.json          # (aussi graine de départ pour le Google Sheet)
+│   ├── collections.json          # (aussi graine de départ pour le Google Sheet)
+│   └── supplier_formats.json     # formats de factures par fournisseur
 ├── data/
 │   └── product_template.csv        # Template Shopify (ordre/nom des colonnes)
 ├── tests/
@@ -77,14 +79,14 @@ shopify-invoice-converter/
 - **Rôle** : point unique pour les constantes et l'accès à la config, quel que soit le backend.
 - **Contenu clé** :
   - Constantes métier : `TAG_NEW` (`nouveautés`), `WEIGHT_NORMAL_G` (500), `WEIGHT_DECK_G` (1000), `WEIGHT_UNIT` (`kg`).
-  - `config_health(rules, mapping, collections)` : liste des points de configuration à compléter (affichée dans la barre latérale).
-  - `PROFILES` : dictionnaire *nom lisible → liste ordonnée des champs numériques* en fin de ligne (`qty`, `unit_price_gross`, `unit_price_net`, `total`, `public_price`). **C'est ce qui adapte le parseur à un format de document.**
+  - `config_health(rules, mapping, collections, formats=None)` : liste des points de configuration à compléter (affichée dans la barre latérale) ; contrôle aussi les formats fournisseurs si `formats` est fourni.
+  - `load_profiles()` : formats fournisseurs enregistrés → `({nom: liste ordonnée des champs numériques}, problèmes)`. **C'est ce qui adapte le parseur à la facture d'un fournisseur.** Les formats invalides sont ignorés et signalés, pas bloquants.
   - `set_store` / `get_store` : backend actif (par défaut `LocalJsonStore(CONFIG_DIR)`). `load_json(name)` / `save_json(name, data)` **délèguent** au backend : le reste du code ne sait pas d'où vient la config.
   - `template_columns(uploaded=None)` : colonnes du template (upload > `data/product_template.csv`), ordre conservé.
   - `FALLBACK_COLUMNS` : lu **à l'import du module** depuis `data/product_template.csv`.
 
 ### `converter/storage.py` — Backends de configuration ⚠️ *composant sensible*
-- **Rôle** : lire/écrire les 3 documents de config (`product_rules.json`, `product_type_mapping.json`, `collections.json`) via une interface unique `ConfigStore` (`load`, `save`, `refresh`, `description`, `url`). **N'importe ni Streamlit ni le reste du projet.**
+- **Rôle** : lire/écrire les 4 documents de config (`product_rules.json`, `product_type_mapping.json`, `collections.json`, `supplier_formats.json`) via une interface unique `ConfigStore` (`load`, `save`, `refresh`, `description`, `url`). **N'importe ni Streamlit ni le reste du projet.**
 - **Contenu clé** :
   - `StorageError` (sous-classe d'`OSError`, message lisible) ; `VALID_KINDS`.
   - `LocalJsonStore` : fichiers JSON, écriture atomique.
@@ -152,6 +154,7 @@ shopify-invoice-converter/
 | `product_rules.json` | `brands`, `colors`, `product_types` (`keywords`, `type_key`, `kind`, `label`), `sized_numeric_kinds` |
 | `product_type_mapping.json` | `type_key` → Product Type Shopify **exact** (vide = alerte) |
 | `collections.json` | `allowed` (liste blanche) et `by_type_key` (type → collection, ajoutée dans `Tags`) |
+| `supplier_formats.json` | `formats` : liste de `{name, columns, notes}` — `columns` = colonnes numériques de fin de ligne article, de gauche à droite (`qty`, `unit_price_gross`, `unit_price_net`, `total`, `public_price`) ; `qty` obligatoire, pas de doublon |
 
 ### `data/product_template.csv`
 Référence de la **structure** Shopify (57 colonnes). Seul l'en-tête est utilisé par le code.
@@ -273,7 +276,7 @@ Bouton 🛠️ → `config_dialog()` → édition → validation (`validate_*`) 
 ### ⚠️ Composants qui risquent de devenir complexes
 | Zone | Risque | Conseil |
 |---|---|---|
-| `pdf_parser._parse_block` | Heuristiques sur la queue numérique ; chaque nouveau format fournisseur tente d'y ajouter des cas | Préférer un **nouveau profil** dans `PROFILES`. Si les cas divergent trop, scinder en un parseur par fournisseur derrière une même fonction `parse_pdf`. |
+| `pdf_parser._parse_block` | Heuristiques sur la queue numérique ; chaque nouveau format fournisseur tente d'y ajouter des cas | Préférer un **nouveau format fournisseur** (🛠️ → *Formats fournisseurs*). Si les cas divergent trop, scinder en un parseur par fournisseur derrière une même fonction `parse_pdf`. |
 | `normalizer.normalize_item` | Fonction longue (marque, type, options, titre, prix, tags) | La découper par `kind` (une fonction par type de produit) dès qu'une règle de plus s'ajoute. |
 | Regex de tailles/largeurs/roues | Faux positifs (un « M » ou un « 8 » dans une désignation) | Ajouter un test par cas réel rencontré avant de modifier la regex. |
 | `storage.py` | Deux représentations de la même config (JSON / onglets) à garder synchrones ; dernier enregistrement gagnant ; dépend d'un service externe | Toute évolution du schéma = `SHEET_SCHEMAS` + `sheets_to_doc` + `doc_to_sheets` + test d'aller-retour (`test_sheets_seed_and_roundtrip_equals_local`). |
@@ -283,13 +286,13 @@ Bouton 🛠️ → `config_dialog()` → édition → validation (`validate_*`) 
 ### Procédure : ajouter ou modifier une fonctionnalité
 1. **Écrire le test d'abord** dans `tests/test_pipeline.py` (cas réel anonymisé de préférence).
 2. **Identifier la couche** et partir du bas :
-   `models.py` (nouveau champ) → `pdf_parser.py` / `config.PROFILES` (extraction) → `normalizer.py` (règle) → `shopify_builder.py` (colonne CSV) → `app.py` (affichage).
-3. **Mettre à jour les imports** : dans `app.py`, importer depuis `converter.<module>` ; entre modules, imports **relatifs** (`from .models import LineItem`). Respectez le sens des dépendances du diagramme (pas d'import circulaire : `models` et `storage` ne doivent rien importer du projet ; `config` n'importe que `storage`).
+   `models.py` (nouveau champ) → `pdf_parser.py` / `formats.py` (extraction) → `normalizer.py` (règle) → `shopify_builder.py` (colonne CSV) → `app.py` (affichage).
+3. **Mettre à jour les imports** : dans `app.py`, importer depuis `converter.<module>` ; entre modules, imports **relatifs** (`from .models import LineItem`). Respectez le sens des dépendances du diagramme (pas d'import circulaire : `models`, `formats` et `storage` n'importent que `formats` (pour `storage`) ; `config` n'importe que `storage` et `formats`).
 4. **Lancer `pytest`** puis `streamlit run app.py` et vérifier à la main.
 5. **Mettre à jour la doc** (`README.md` / ce fichier) et committer.
 
 ### Exemples de recettes
-- **Nouveau format de BL** : ajouter une entrée dans `config.PROFILES` (ordre des colonnes numériques) → elle est automatiquement prise en compte par la détection, aucun autre changement si les SKU respectent `AAA-BBB-1234`. Sinon, assouplir `SKU_RE` avec un test dédié.
+- **Nouveau fournisseur / format de facture** : 🛠️ → *Formats fournisseurs* → ajouter une ligne (nom + colonnes numériques dans l'ordre de lecture) → il apparaît dans la liste « Format fournisseur » et dans la détection automatique, sans toucher au code, si les SKU respectent `AAA-BBB-1234`. Sinon, assouplir `SKU_RE` avec un test dédié.
 - **Nouveau type de produit** : 🛠️ → *Types de produit* (mots-clés, `type_key`, `kind`, libellé) → compléter le *Mapping* → c'est tout. Un nouveau **`kind`** (comportement d'options inédit) exige en plus : l'ajouter à `config_ui.KINDS` et une branche dans `normalizer.normalize_item`.
 - **Nouvelle colonne Shopify à remplir** : ajouter la clé dans le dictionnaire `values` de `build_dataframe` (le nom doit être **exactement** celui du template, sinon elle est ignorée), et le champ correspondant dans `Product` si la valeur vient des règles.
 - **Changer une valeur fixe** (poids, tag, statut) : constante dans `config.py` (poids, tag) ou `build_dataframe` (statut, etc.).
