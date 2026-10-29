@@ -381,8 +381,8 @@ def test_validate_formats_table():
     _, errs = validate_formats(pd.DataFrame([row("A", "Qté"), row("a", "Total"), row("", "Qté", "Qté")]))
     assert len(errs) == 4  # doublon de nom, Qté manquante, nom requis, colonne en double
 
-    _, errs = validate_formats(pd.DataFrame([row(None)]))
-    assert any("au moins un format" in e for e in errs)
+    formats, errs = validate_formats(pd.DataFrame([row(None)]))
+    assert formats == [] and not errs  # aucun format fin de ligne : permis (modèles et lecture auto des tableaux)
 
 
 def test_sheets_formats_roundtrip_and_hand_edit():

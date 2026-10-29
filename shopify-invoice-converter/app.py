@@ -1,7 +1,6 @@
 """Interface Streamlit : conversion facture/BL -> CSV Shopify + rapprochement PO/BL."""
 from __future__ import annotations
 
-import io
 import logging
 import os
 from datetime import date
@@ -9,20 +8,20 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from converter.config import CONFIG_DIR, config_health, get_store, load_json, load_profiles, set_store, template_columns
+from converter.analysis import AUTO, AUTO_TABLE, Analysis, analyze
+from converter.config import CONFIG_DIR, config_health, get_store, load_formats, load_json, set_store, template_columns
 from converter.config_ui import config_dialog
+from converter.debug_ui import render_debug
 from converter.diagnostics import secrets_toml_problem
 from converter.diagnostics_ui import diagnostic_dialog
-from converter.formats import FIELD_LABELS
 from converter.logs import setup_logging
 from converter.models import LineItem, df_to_items, items_to_df
 from converter.normalizer import normalize_item
-from converter.pdf_parser import PdfExtractionError, detect_profile, extract_text, parse_text
+from converter.pdf_parser import PdfExtractionError
 from converter.reconciliation import STATUS_OK, reconcile
 from converter.shopify_builder import build_dataframe
 from converter.storage import LocalJsonStore, StorageError, build_store
 
-AUTO = "🔍 Détection automatique"
 PREVIEW_COLUMNS = [
     "Title", "URL handle", "Vendor", "Type", "Tags", "SKU", "Barcode",
     "Option1 name", "Option1 value", "Option2 name", "Option2 value",
@@ -73,23 +72,17 @@ def _init_store():
 
 
 @st.cache_data(show_spinner=False)
-def _read_text(file_bytes: bytes) -> str:
-    return extract_text(io.BytesIO(file_bytes))
+def _analyze(file_bytes: bytes, choice: str, profiles: dict[str, list[str]], templates: dict[str, dict]) -> Analysis:
+    """Analyse complète du PDF (toutes méthodes + traces pour le mode debug), mise en cache par contenu."""
+    return analyze(file_bytes, choice, profiles, templates)
 
 
-def _parse_document(file_bytes: bytes, choice: str, profiles: dict[str, list[str]]) -> tuple[str, list[LineItem]]:
-    """Retourne (nom du format fournisseur utilisé, lignes). Lève PdfExtractionError avec un message lisible."""
-    if not profiles:
-        raise PdfExtractionError("Aucun format fournisseur enregistré : ajoutez-en un dans 🛠️ Gérer la configuration.")
-    text = _read_text(file_bytes)
-    if choice == AUTO:
-        return detect_profile(text, profiles)
-    if choice not in profiles:
-        raise PdfExtractionError(f"Le format « {choice} » n'existe plus : choisissez-en un autre.")
-    items = parse_text(text, profiles[choice])
-    if not items:
-        raise PdfExtractionError("Aucun article détecté avec ce format. Essayez un autre format ou la détection automatique.")
-    return choice, items
+def _parse_document(file_bytes: bytes, choice: str) -> list[LineItem]:
+    """Lignes du document. Lève PdfExtractionError avec un message lisible."""
+    analysis = _analyze(file_bytes, choice, profiles, templates)
+    if analysis.error:
+        raise PdfExtractionError(analysis.error)
+    return analysis.items
 
 
 def _guess_column(columns: list[str], keywords: tuple[str, ...], fallback: int) -> int:
@@ -102,6 +95,11 @@ def _guess_column(columns: list[str], keywords: tuple[str, ...], fallback: int) 
 # ----------------------------- Barre latérale -----------------------------
 with st.sidebar:
     st.header("⚙️ Paramètres")
+    debug = st.toggle(
+        "🐞 Mode debug",
+        help="Affiche sous le PDF déposé tout ce que l'application en extrait (texte, colonnes, lignes, méthodes "
+        "testées) et permet d'enregistrer un modèle de facture pour un nouveau fournisseur.",
+    )
     with st.expander("💶 Prix de vente de secours"):
         st.caption("Utilisés uniquement quand le prix public TTC est absent du document.")
         coef = st.number_input("Coefficient multiplicateur", 1.0, 10.0, 2.4, 0.1, help="Prix = coût × coefficient × (1 + TVA)")
@@ -143,7 +141,7 @@ try:
     type_mapping = load_json("product_type_mapping.json")
     collections = load_json("collections.json")
     formats_doc = load_json("supplier_formats.json")
-    profiles, _format_problems = load_profiles()
+    profiles, templates, _format_problems = load_formats()
     columns = template_columns(template_upload.getvalue() if template_upload else None)
 except (OSError, ValueError) as exc:  # inclut FileNotFoundError et StorageError
     log.error("Chargement de la configuration impossible : %s", exc, exc_info=True)
@@ -175,9 +173,9 @@ def render_convert() -> None:
     pdf = col_up.file_uploader("Facture / BL fournisseur (PDF)", type=["pdf"], key="invoice")
     choice = col_fmt.selectbox(
         "Format fournisseur",
-        [AUTO, *profiles],
-        help="Formats enregistrés dans 🛠️ Gérer la configuration → Formats fournisseurs. "
-        "« Détection automatique » teste chacun d'eux et retient le plus cohérent.",
+        [AUTO, *templates, *profiles, AUTO_TABLE],
+        help="Modèles et formats enregistrés dans 🛠️ Gérer la configuration → Formats fournisseurs, plus la lecture "
+        "automatique des tableaux. « Détection automatique » teste tout et retient le plus cohérent.",
     )
     if not pdf:
         st.info("👆 Déposez un PDF pour commencer. Le fichier reste sur cette session et n'est pas conservé.")
@@ -185,24 +183,31 @@ def render_convert() -> None:
 
     try:
         with st.spinner("Analyse du PDF…"):
-            profile_name, items = _parse_document(pdf.getvalue(), choice, profiles)
-    except PdfExtractionError as exc:
-        st.error(str(exc))
-        return
+            analysis = _analyze(pdf.getvalue(), choice, profiles, templates)
     except Exception as exc:  # noqa: BLE001 - dernier filet de sécurité UI
+        log.error("Erreur inattendue pendant l'analyse de %s : %s", pdf.name, exc, exc_info=True)
         st.error(f"Erreur inattendue pendant l'analyse : {exc}")
         return
 
+    if analysis.error:
+        st.error(analysis.error)
+    if debug:
+        with st.expander("🐞 Debug de l'extraction", expanded=bool(analysis.error)):
+            render_debug(analysis, key=f"{pdf.name}-{pdf.size}")
+    if analysis.error:
+        return
+
+    chosen = analysis.chosen
     st.subheader("Étape 2 · Vérifiez les lignes extraites")
     st.caption(
-        f"Format utilisé : **{profile_name}** ({' → '.join(FIELD_LABELS[c] for c in profiles[profile_name])}) · Modifiez une cellule en double-cliquant, "
+        f"Format utilisé : **{chosen.name}** ({chosen.describe()}) · Modifiez une cellule en double-cliquant, "
         "ajoutez une ligne avec ➕ en bas, supprimez en cochant la ligne puis 🗑️."
     )
     edited = st.data_editor(
-        items_to_df(items),
+        items_to_df(analysis.items),
         num_rows="dynamic",
         width="stretch",
-        key=f"editor-{pdf.name}-{pdf.size}-{profile_name}",
+        key=f"editor-{pdf.name}-{pdf.size}-{chosen.name}",
         disabled=["Alertes"],
         column_config={
             "SKU": st.column_config.TextColumn(required=True),
@@ -258,15 +263,15 @@ def render_reconcile() -> None:
     po_file = c1.file_uploader("1 · Bon de commande (PDF)", type=["pdf"], key="po")
     bl_file = c2.file_uploader("2 · Bon de livraison (PDF ou CSV)", type=["pdf", "csv"], key="bl")
     with st.expander("Options avancées"):
-        po_choice = st.selectbox("Format fournisseur du PO", [AUTO, *profiles], key="po_fmt")
-        bl_choice = st.selectbox("Format fournisseur du BL (PDF)", [AUTO, *profiles], key="bl_fmt")
+        po_choice = st.selectbox("Format fournisseur du PO", [AUTO, *templates, *profiles, AUTO_TABLE], key="po_fmt")
+        bl_choice = st.selectbox("Format fournisseur du BL (PDF)", [AUTO, *templates, *profiles, AUTO_TABLE], key="bl_fmt")
 
     if not (po_file and bl_file):
         st.info("👆 Déposez les deux documents pour lancer le rapprochement.")
         return
 
     try:
-        _, po_items = _parse_document(po_file.getvalue(), po_choice, profiles)
+        po_items = _parse_document(po_file.getvalue(), po_choice)
         if bl_file.name.lower().endswith(".csv"):
             bl_df = pd.read_csv(bl_file, dtype=str)
             cols = list(bl_df.columns)
@@ -277,7 +282,7 @@ def render_reconcile() -> None:
                 LineItem(sku=str(r[sku_col]).strip(), qty=int(float(r[qty_col] or 0))) for _, r in bl_df.iterrows()
             ]
         else:
-            _, bl_items = _parse_document(bl_file.getvalue(), bl_choice, profiles)
+            bl_items = _parse_document(bl_file.getvalue(), bl_choice)
     except PdfExtractionError as exc:
         st.error(str(exc))
         return

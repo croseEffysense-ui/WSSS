@@ -20,7 +20,10 @@ app.py                      # interface Streamlit (2 onglets)
 converter/
   storage.py                # backends de config : JSON local / Google Sheets
   logs.py / diagnostics.py  # journalisation (secrets masqués) / diagnostic pas à pas
-  pdf_parser.py             # PDF -> lignes (SKU, description, qté, prix, EAN)
+  analysis.py               # essaie toutes les méthodes de lecture et retient la plus cohérente
+  table_parser.py           # lecture par colonnes (position des mots + en-têtes du tableau)
+  pdf_parser.py             # lecture « colonnes de fin de ligne » (SKU AAA-BBB-1234)
+  debug_ui.py               # mode debug : ce que l'app lit dans le PDF + création de modèle
   normalizer.py             # règles métier : marque, type, titre, options, prix, poids
   shopify_builder.py        # lignes -> CSV (colonnes du template, variantes, consolidation)
   reconciliation.py         # PO vs BL
@@ -35,8 +38,20 @@ data/product_template.csv   # template Shopify (ordre des colonnes)
 tests/
 ```
 
+## Lecture des factures
+La **détection automatique** essaie, dans cet ordre de préférence :
+1. les **modèles par en-têtes** enregistrés, en priorité celui dont l'*identifiant* (nom, n° de TVA…) figure dans le PDF ;
+2. la **lecture automatique du tableau** : l'en-tête (« Quantité », « Prix Net », « Montant HT »…, même sur 2-3 lignes) est reconnu, et chaque nombre est rangé sous l'en-tête le plus proche. Elle fonctionne quel que soit le nombre de colonnes : les colonnes inutiles (Remise, TVA, Taille…) sont ignorées. Sans colonne de prix net mais avec une remise, le PU Net est calculé à partir de Total ÷ Qté ;
+3. les formats **« colonnes de fin de ligne »** ci-dessous.
+
+**🐞 Mode debug** (barre latérale) : sous le PDF déposé, on voit les méthodes testées, les colonnes détectées, le rôle de chaque ligne (en-tête, article, suite, pied, ignorée) et pourquoi, le texte brut et les coordonnées des mots. L'onglet **💾 Créer un modèle** permet de choisir la ligne d'en-tête, d'associer chaque information à une colonne, de vérifier l'aperçu et d'enregistrer le modèle du fournisseur.
+
+Limites : les PDF scannés (images sans texte) demandent un OCR préalable. Les factures en grille tailles × quantités (une colonne par taille) ne sont pas encore lues.
+
 ## Formats de factures par fournisseur
-Chaque fournisseur a sa façon de présenter les colonnes chiffrées d'une ligne article. Un **format** décrit ces colonnes, **de gauche à droite** (jusqu'à 5 : Qté, PU HT (brut), PU Net, Total, Prix public TTC ; la Qté est obligatoire).
+**Modèles par en-têtes** (recommandé) : pour chaque information (SKU / Référence, Description, Qté, PU HT (brut), PU Net, Total, Prix public TTC), on indique l'en-tête de colonne tel qu'il est écrit sur la facture, plus un *identifiant* facultatif. Dans Google Sheets, ils se trouvent dans l'onglet `supplier_formats`, colonnes `match` et `table`, p. ex. `SKU / Référence = Numéro d'Article ; Qté = Quantité Totale ; PU Net = Prix Net`.
+
+**Colonnes de fin de ligne** : un format décrit les colonnes chiffrées de la fin d'une ligne article, **de gauche à droite** (jusqu'à 5 : Qté, PU HT (brut), PU Net, Total, Prix public TTC ; la Qté est obligatoire).
 
 **🛠️ Gérer la configuration → Formats fournisseurs** : ajoutez une ligne par fournisseur (nom + *Colonne 1…5*), modifiez ou supprimez-en, puis **💾 Enregistrer**. Les formats enregistrés alimentent la liste **« Format fournisseur »** (conversion et rapprochement PO/BL) et la détection automatique. Les 4 formats fournis sont des exemples : renommez-les au nom de vos fournisseurs.
 
@@ -64,7 +79,7 @@ Par défaut la config vit dans `config/*.json`. Pour la partager en équipe et l
 | `type_mapping` | `type_key`, `product_type` | Association → Product Type Shopify exact |
 | `collections_allowed` | `collection` | Liste blanche |
 | `collections_by_type` | `type_key`, `collection` | Type → collection |
-| `supplier_formats` | `name`, `columns`, `notes` | Formats de factures par fournisseur |
+| `supplier_formats` | `name`, `columns`, `notes` (+ `match`, `table` pour les modèles par en-têtes, ajoutées automatiquement à l'enregistrement) | Formats de factures par fournisseur |
 
 Vous pouvez éditer **dans le Sheet** (nouvelles lignes, suppression, modification ; l'ordre des colonnes est libre, ne renommez pas les en-têtes) **ou dans l'app** (🛠️ Gérer la configuration). L'app relit le Sheet toutes les ~30 s, ou immédiatement via **🔄 Recharger**.
 `CONFIG_BACKEND=json` force le mode local. Si Google Sheets est configuré mais inaccessible, l'app affiche l'erreur et bascule sur les JSON locaux.

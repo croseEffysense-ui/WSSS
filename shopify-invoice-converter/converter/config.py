@@ -7,7 +7,7 @@ from typing import Optional
 
 import pandas as pd
 
-from .formats import profiles_from_doc
+from .formats import formats_from_doc, profiles_from_doc
 from .storage import DOC_FORMATS, VALID_KINDS, ConfigStore, LocalJsonStore
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -52,6 +52,11 @@ def load_profiles() -> tuple[dict[str, list[str]], list[str]]:
     return profiles_from_doc(load_json(DOC_FORMATS))
 
 
+def load_formats() -> tuple[dict[str, list[str]], dict[str, dict], list[str]]:
+    """Tous les formats enregistrés : (fin de ligne {nom: colonnes}, modèles par en-têtes {nom: modèle}, problèmes)."""
+    return formats_from_doc(load_json(DOC_FORMATS))
+
+
 def config_health(rules: dict, mapping: dict, collections: dict, formats: Optional[dict] = None) -> list[str]:
     """Points de configuration à compléter (liste vide = tout est prêt).
 
@@ -59,9 +64,9 @@ def config_health(rules: dict, mapping: dict, collections: dict, formats: Option
     """
     issues: list[str] = []
     if formats is not None:
-        profiles, problems = profiles_from_doc(formats)
-        if not profiles:
-            issues.append("Aucun format de facture fournisseur valide")
+        profiles, templates, problems = formats_from_doc(formats)
+        if not profiles and not templates:
+            issues.append("Aucun format de facture fournisseur valide (la lecture automatique des tableaux reste active)")
         issues.extend(problems)
     if not rules.get("brands"):
         issues.append("Aucune marque définie")

@@ -21,7 +21,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterator, Mapping, Optional, Protocol
 
-from .formats import columns_from_text, columns_to_text
+from .formats import columns_from_text, columns_to_text, table_from_text, table_to_text
 
 log = logging.getLogger("converter.storage")
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -41,6 +41,10 @@ SHEET_SCHEMAS: dict[str, list[str]] = {
     "collections_allowed": ["collection"],
     "collections_by_type": ["type_key", "collection"],
     "supplier_formats": ["name", "columns", "notes"],
+}
+# Colonnes facultatives : lues si présentes (Sheets créés avant leur ajout), toujours écrites
+SHEET_OPTIONAL: dict[str, list[str]] = {
+    "supplier_formats": ["match", "table"],
 }
 DOC_SHEETS: dict[str, list[str]] = {
     DOC_RULES: ["brands", "colors", "product_types", "settings"],
@@ -135,11 +139,14 @@ def _table(rows: Rows, sheet: str) -> list[dict[str, str]]:
                 f"(en-tête attendu : {', '.join(schema)})."
             )
         idx[col] = header.index(col)
+    for col in SHEET_OPTIONAL.get(sheet, []):
+        if col in header:
+            idx[col] = header.index(col)
     out = []
     for r in rows[1:]:
         rec = {col: (str(r[i]).strip() if i < len(r) else "") for col, i in idx.items()}
         if any(rec.values()):
-            out.append(rec)
+            out.append({**{c: "" for c in SHEET_OPTIONAL.get(sheet, [])}, **rec})
     return out
 
 
@@ -176,13 +183,18 @@ def sheets_to_doc(name: str, sheets: Mapping[str, Rows]) -> dict:
             "by_type_key": {r["type_key"]: r["collection"] for r in t("collections_by_type") if r["type_key"] and r["collection"]},
         }
     if name == DOC_FORMATS:
-        return {
-            "formats": [
-                {"name": r["name"], "columns": columns_from_text(r["columns"]), "notes": r["notes"]}
-                for r in t("supplier_formats")
-                if r["name"]
-            ]
-        }
+        formats = []
+        for r in t("supplier_formats"):
+            if not r["name"]:
+                continue
+            entry: dict = {"name": r["name"]}
+            if r["table"]:  # modèle par en-têtes
+                entry.update(table=table_from_text(r["table"]), match=r["match"])
+            else:
+                entry["columns"] = columns_from_text(r["columns"])
+            entry["notes"] = r["notes"]
+            formats.append(entry)
+        return {"formats": formats}
     raise StorageError(f"Document de configuration inconnu : {name}")
 
 
@@ -210,12 +222,15 @@ def doc_to_sheets(name: str, data: Mapping) -> dict[str, Rows]:
             "collections_by_type": sheet("collections_by_type", [[k, v] for k, v in data.get("by_type_key", {}).items()]),
         }
     if name == DOC_FORMATS:
-        return {
-            "supplier_formats": sheet(
-                "supplier_formats",
-                [[f.get("name", ""), columns_to_text(f.get("columns", [])), f.get("notes", "")] for f in data.get("formats", [])],
-            )
-        }
+        rows = [
+            [f.get("name", ""), columns_to_text(f.get("columns", [])), f.get("notes", ""),
+             f.get("match", ""), table_to_text(f.get("table") or {})]
+            for f in data.get("formats", [])
+        ]
+        for row in rows:  # cellules vides de fin retirées : les formats simples restent sur 3 colonnes
+            while row and row[-1] == "":
+                row.pop()
+        return {"supplier_formats": [[*SHEET_SCHEMAS["supplier_formats"], *SHEET_OPTIONAL["supplier_formats"]], *rows]}
     raise StorageError(f"Document de configuration inconnu : {name}")
 
 

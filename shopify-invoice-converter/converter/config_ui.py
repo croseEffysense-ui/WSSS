@@ -10,7 +10,7 @@ import pandas as pd
 import streamlit as st
 
 from .config import get_store, load_json, save_json
-from .formats import FIELD_LABELS, MAX_COLUMNS, field_key, profiles_from_doc, validate_format
+from .formats import FIELD_LABELS, MAX_COLUMNS, TABLE_FIELDS, field_key, profiles_from_doc, validate_format, validate_table
 from .storage import DOC_FORMATS, VALID_KINDS
 
 KINDS = VALID_KINDS
@@ -125,9 +125,26 @@ def validate_formats(df: pd.DataFrame) -> tuple[list[dict], list[str]]:
                 errors.append(f"Ligne {n} : fournisseur « {name} » en double")
             names.add(name.lower())
         formats.append({"name": name, "columns": columns, "notes": notes})
-    if not formats and not errors:
-        errors.append("Définissez au moins un format (sinon aucun PDF ne pourra être analysé)")
     return formats, errors
+
+
+def validate_templates(df: pd.DataFrame) -> tuple[list[dict], list[str]]:
+    """Tableau éditable (name, match, un en-tête par champ, notes) -> (modèles par en-têtes à enregistrer, erreurs)."""
+    templates: list[dict] = []
+    errors: list[str] = []
+    names: set[str] = set()
+    for n, (_, r) in enumerate(df.iterrows(), start=1):
+        name, match, notes = _cell(r.get("name")), _cell(r.get("match")), _cell(r.get("notes"))
+        table = {fld: _cell(r.get(label)) for fld, label in TABLE_FIELDS.items() if _cell(r.get(label))}
+        if not (name or table or match or notes):
+            continue  # ligne vide
+        errors += [f"Modèle {n} : {e}" for e in validate_table(name, table)]
+        if name:
+            if name.lower() in names:
+                errors.append(f"Modèle {n} : fournisseur « {name} » en double")
+            names.add(name.lower())
+        templates.append({"name": name, "table": table, "match": match, "notes": notes})
+    return templates, errors
 
 
 # ----------------------------- Helpers UI -----------------------------
@@ -246,18 +263,60 @@ def _collections_tab() -> None:
             st.rerun()
 
 
+def _is_template(entry: dict) -> bool:
+    return bool(entry.get("table"))
+
+
+def _templates_editor(doc: dict) -> None:
+    st.markdown("**Modèles par en-têtes de colonnes** (recommandé : fonctionne quel que soit le nombre de colonnes)")
+    st.caption(
+        "Pour chaque information, recopiez l'en-tête de la colonne tel qu'il est écrit sur la facture "
+        "(ex. Qté → « Quantité Totale », PU Net → « Prix Net »). Le plus simple : déposez une facture avec "
+        "🐞 Mode debug activé, onglet « 💾 Créer un modèle ». **Identifiant** = texte présent sur les factures "
+        "de ce fournisseur (nom, n° de TVA) pour que la détection automatique le choisisse."
+    )
+    rows = [
+        {"name": f.get("name", ""), "match": f.get("match", ""),
+         **{label: f["table"].get(fld) for fld, label in TABLE_FIELDS.items()}, "notes": f.get("notes", "")}
+        for f in doc.get("formats", []) if _is_template(f)
+    ]
+    edited = st.data_editor(
+        pd.DataFrame(rows, columns=["name", "match", *TABLE_FIELDS.values(), "notes"]),
+        num_rows="dynamic",
+        width="stretch",
+        key="ed_templates",
+        column_config={
+            "name": st.column_config.TextColumn("Fournisseur", required=True),
+            "match": st.column_config.TextColumn("Identifiant", help="Texte présent sur ses factures (nom, n° de TVA…)"),
+            "notes": st.column_config.TextColumn("Notes"),
+        },
+    )
+    if st.button("💾 Enregistrer les modèles", key="save_templates"):
+        templates, errors = validate_templates(edited)
+        names = {t["name"].lower() for t in templates}
+        errors += [f"« {f['name']} » existe déjà dans les formats fin de ligne" for f in doc.get("formats", [])
+                   if not _is_template(f) and str(f.get("name", "")).lower() in names]
+        if errors:
+            _show_errors(errors)
+        elif _save(DOC_FORMATS, {**doc, "formats": [*(f for f in doc.get("formats", []) if not _is_template(f)), *templates]}, doc):
+            st.rerun()
+
+
 def _formats_tab() -> None:
     doc = load_json(DOC_FORMATS)
     _, problems = profiles_from_doc(doc)
+    for p in problems:
+        st.warning(p)
+    _templates_editor(doc)
+    st.divider()
+    st.markdown("**Formats « colonnes de fin de ligne »** (références de la forme AAA-BBB-1234)")
     st.caption(
-        "Un format par fournisseur. **Colonne 1 → 5** = colonnes numériques à la fin d'une ligne article, "
+        "**Colonne 1 → 5** = colonnes numériques à la fin d'une ligne article, "
         "**de gauche à droite** comme sur la facture (laissez vide les cases inutilisées). "
         "Le format est ensuite proposé dans la liste « Format fournisseur » lors de l'analyse d'un PDF."
     )
-    for p in problems:
-        st.warning(p)
     rows = []
-    for f in doc.get("formats", []):
+    for f in (f for f in doc.get("formats", []) if not _is_template(f)):
         cols = [FIELD_LABELS.get(c) for c in f.get("columns", [])]
         row = {"name": f.get("name", "")}
         row.update({c: (cols[i] if i < len(cols) else None) for i, c in enumerate(FORMAT_COLUMNS)})
@@ -278,9 +337,12 @@ def _formats_tab() -> None:
     )
     if st.button("💾 Enregistrer les formats", key="save_formats"):
         formats, errors = validate_formats(edited)
+        templates = [f for f in doc.get("formats", []) if _is_template(f)]
+        names = {str(t.get("name", "")).lower() for t in templates}
+        errors += [f"« {f['name']} » existe déjà comme modèle par en-têtes" for f in formats if f["name"].lower() in names]
         if errors:
             _show_errors(errors)
-        elif _save(DOC_FORMATS, {**doc, "formats": formats}, doc):
+        elif _save(DOC_FORMATS, {**doc, "formats": [*formats, *templates]}, doc):
             st.rerun()
 
 

@@ -1,9 +1,10 @@
 {
-  "_comment": "Formats de factures / BL par fournisseur. columns = colonnes numériques en fin de ligne article, de gauche à droite (clés : qty, unit_price_gross, unit_price_net, total, public_price). Renommez ces exemples au nom de vos fournisseurs.",
+  "_comment": "Formats de factures / BL par fournisseur. Deux sortes : (1) table = modèle par en-têtes {champ: en-tête de colonne sur la facture} (clés : sku, description, qty, unit_price_gross, unit_price_net, total, public_price) + match = texte qui identifie le fournisseur ; (2) columns = colonnes numériques en fin de ligne article, de gauche à droite. Renommez ces exemples au nom de vos fournisseurs.",
   "formats": [
     {"name": "Facture simple (Qté, PU HT, Total)", "columns": ["qty", "unit_price_net", "total"], "notes": ""},
     {"name": "BL complet (Qté, PU HT, PU Net, Total, Prix public TTC)", "columns": ["qty", "unit_price_gross", "unit_price_net", "total", "public_price"], "notes": ""},
     {"name": "BL (Qté, PU HT, PU Net, Prix public TTC)", "columns": ["qty", "unit_price_gross", "unit_price_net", "public_price"], "notes": ""},
-    {"name": "Bon de commande (Qté, PU)", "columns": ["qty", "unit_price_net"], "notes": ""}
+    {"name": "Bon de commande (Qté, PU)", "columns": ["qty", "unit_price_net"], "notes": ""},
+    {"name": "Adidas", "table": {"sku": "Numéro d'Article", "description": "Description de l'Article", "qty": "Quantité Totale", "unit_price_gross": "Prix Catalogue", "unit_price_net": "Prix Net", "total": "Montant Net"}, "match": "adidas France", "notes": "Facture 11 colonnes (Taille / Quantité, Remise, Montant TVA… ignorées)"}
   ]
 }
