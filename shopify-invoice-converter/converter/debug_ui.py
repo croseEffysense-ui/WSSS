@@ -298,6 +298,18 @@ def render_template_form(a: Analysis, key: str, template_name: str = "", templat
         help="Utilisé quand le type de produit n'est pas reconnu (ex. « Chaussures » pour un fournisseur de chaussures).",
     )
     size_chart = "" if size_chart == "—" or not size_system else size_chart
+    c_vendor, c_type = st.columns(2)
+    default_vendor = c_vendor.text_input(
+        "Marque si absente de la désignation (facultatif)", value=template.get("default_vendor", ""), key=f"dbg-vendor-{key}",
+        help="Seulement si ce fournisseur EST la marque (ex. Adidas, Carhartt WIP). Ne mettez jamais un distributeur.",
+    )
+    type_keys = ["—", *(r["type_key"] for r in load_json("product_rules.json").get("product_types", []))]
+    default_type = c_type.selectbox(
+        "Type si aucun mot ne le reconnaît (facultatif)", type_keys,
+        index=type_keys.index(template.get("default_type")) if template.get("default_type") in type_keys else 0,
+        key=f"dbg-type-{key}", help="Ex. « shoes » pour un fournisseur de chaussures dont les désignations ne disent pas « shoe ».",
+    )
+    default_type = "" if default_type == "—" else default_type
     if st.button("💾 Enregistrer le modèle", type="primary", key=f"dbg-save-{key}", disabled=not items):
         problems = validate_table(name, mapping)
         if problems:
@@ -307,7 +319,10 @@ def render_template_form(a: Analysis, key: str, template_name: str = "", templat
         try:
             doc = load_json(DOC_FORMATS)
             replaced = any(str(f.get("name", "")).strip().lower() == name.strip().lower() for f in doc.get("formats", []))
-            save_json(DOC_FORMATS, upsert_template(doc, name, mapping, match, size_system=size_system, size_chart=size_chart))
+            save_json(DOC_FORMATS, upsert_template(
+                doc, name, mapping, match, size_system=size_system, size_chart=size_chart,
+                default_vendor=default_vendor, default_type=default_type,
+            ))
         except (OSError, ValueError, StorageError) as exc:
             st.error(f"Enregistrement impossible : {exc}")
             return

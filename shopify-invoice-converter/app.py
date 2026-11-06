@@ -128,7 +128,8 @@ def _guess_column(columns: list[str], keywords: tuple[str, ...], fallback: int) 
 # Les réglages vivent dans la fenêtre « Paramètres ⚙️ » : leurs valeurs sont gardées dans la session (clés opt_*)
 # pour survivre à la fermeture de la fenêtre.
 ss = st.session_state
-for _key, _default in {"opt_debug": False, "opt_coef": 2.4, "opt_tva": 20.0, "opt_template": None, "opt_template_name": ""}.items():
+for _key, _default in {"opt_debug": False, "opt_fallback_price": False, "opt_coef": 2.4, "opt_tva": 20.0,
+                       "opt_template": None, "opt_template_name": ""}.items():
     ss.setdefault(_key, _default)
 
 store, store_error = _init_store()
@@ -144,10 +145,20 @@ def _general_settings() -> None:
     )
     st.divider()
     st.markdown("**💶 Prix de vente de secours**")
-    st.caption("Utilisés uniquement quand le prix public TTC est absent du document : prix = coût × coefficient × (1 + TVA).")
+    ss.opt_fallback_price = st.toggle(
+        "Calculer un prix quand le prix public TTC est absent de la facture",
+        value=ss.opt_fallback_price,
+        key="w_fallback_price",
+        help="Désactivé (recommandé) : un prix absent de la facture reste vide dans le CSV, il n'est jamais inventé.",
+    )
+    st.caption("Si activé : prix = coût × coefficient × (1 + TVA), avec une alerte sur chaque ligne concernée.")
     c_coef, c_tva = st.columns(2)
-    ss.opt_coef = c_coef.number_input("Coefficient multiplicateur", 1.0, 10.0, float(ss.opt_coef), 0.1, key="w_coef")
-    ss.opt_tva = c_tva.number_input("Taux de TVA (%)", 0.0, 30.0, float(ss.opt_tva), 0.5, key="w_tva")
+    ss.opt_coef = c_coef.number_input(
+        "Coefficient multiplicateur", 1.0, 10.0, float(ss.opt_coef), 0.1, key="w_coef", disabled=not ss.opt_fallback_price,
+    )
+    ss.opt_tva = c_tva.number_input(
+        "Taux de TVA (%)", 0.0, 30.0, float(ss.opt_tva), 0.5, key="w_tva", disabled=not ss.opt_fallback_price,
+    )
     st.divider()
     st.markdown("**🧩 Template Shopify (avancé)**")
     st.caption("Fichier CSV dont les colonnes (et leur ordre) définissent le CSV généré. Par défaut : le template du dépôt.")
@@ -331,9 +342,12 @@ def render_convert() -> None:
     )
 
     size_system, size_chart = _size_settings(chosen, f"{pdf.name}-{pdf.size}")
+    template = templates.get(chosen.name, {}) if chosen.method == METHOD_TEMPLATE else {}
     try:
         products = [
-            normalize_item(i, rules, type_mapping, collections, coef, tva, size_system, size_chart, size_charts)
+            normalize_item(i, rules, type_mapping, collections, coef, tva, size_system, size_chart, size_charts,
+                           fallback_price=ss.opt_fallback_price, default_vendor=template.get("default_vendor", ""),
+                           default_type=template.get("default_type", ""))
             for i in df_to_items(edited)
         ]
         df = build_dataframe(products, columns)
@@ -345,12 +359,24 @@ def render_convert() -> None:
         return
 
     issues = [{"SKU": p.sku, "Alerte": w} for p in products for w in p.warnings]
+    units, declared = sum(p.qty for p in products), analysis.declared_units
     m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric("Lignes lues", len(products))
     m2.metric("Produits Shopify", df["URL handle"].nunique())
-    m3.metric("Unités", sum(p.qty for p in products))
+    m3.metric(
+        "Unités", units,
+        delta=None if declared is None else ("= facture" if declared == units else f"facture : {declared}"),
+        delta_color="off" if declared in (None, units) else "inverse",
+    )
     m4.metric("Valeur d'achat", f"{sum((p.cost or 0) * p.qty for p in products):,.2f} €".replace(",", " "))
     m5.metric("Alertes", len(issues), delta="à vérifier" if issues else "aucune", delta_color="inverse" if issues else "off")
+
+    if declared is None:
+        st.caption(f"🔢 Total d'unités de la facture non trouvé dans le PDF : vérifiez à la main qu'il vaut {units}.")
+    elif declared == units:
+        st.success(f"🔢 Total d'unités rapproché : {units} lues = {declared} annoncées par la facture.")
+    else:
+        st.error(f"🔢 Écart de quantité : {units} unités lues, la facture en annonce {declared}. Vérifiez les lignes.")
 
     if issues:
         with st.expander(f"⚠️ {len(issues)} alerte(s) à vérifier", expanded=len(issues) <= 15):
@@ -360,12 +386,24 @@ def render_convert() -> None:
     show_all = st.toggle(f"Afficher les {len(columns)} colonnes du template", value=False)
     preview = df if show_all else df[[c for c in PREVIEW_COLUMNS if c in df.columns]]
     st.dataframe(preview, width="stretch", hide_index=True)
+    # Type obligatoire : un produit sans Type doit être signalé AVANT de générer le CSV
+    untyped = sorted({p.title for p in products if not p.product_type})
+    confirmed = True
+    if untyped:
+        st.warning(
+            f"**{len(untyped)} produit(s) sans Type Shopify** : complétez « 2 · Types de produit » et « 5 · Type Shopify » "
+            "(Paramètres ⚙️ → Configuration application), ou confirmez pour télécharger quand même."
+        )
+        with st.expander("Voir les produits sans Type"):
+            st.markdown("\n".join(f"- {t}" for t in untyped))
+        confirmed = st.checkbox("Je confirme : télécharger avec des Types vides", key=f"untyped-{pdf.name}-{pdf.size}")
     st.download_button(
         "📥 Télécharger le CSV Shopify",
         data=df.to_csv(index=False).encode("utf-8"),
         file_name=f"shopify_import_{date.today():%Y-%m-%d}.csv",
         mime="text/csv",
         type="primary",
+        disabled=not confirmed,
     )
 
 

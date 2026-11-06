@@ -13,6 +13,8 @@
         "sizes": "Taille / Quantité"
       },
       "match": "adidas France",
+      "default_vendor": "Adidas",
+      "default_type": "shoes",
       "notes": "Facture 11 colonnes ; une ligne par pointure (3913 = 39 1/3) ; Remise, Montant TVA… ignorées"
     },
     {
@@ -26,7 +28,31 @@
       "match": "FR21524038817",
       "size_system": "US",
       "size_chart": "Chaussures",
+      "default_vendor": "DVS",
+      "default_type": "shoes",
       "notes": "Pas de colonne Qté : grille « Taille: / Quantité: » sous chaque article, une ligne par pointure. Identifiant = n° de TVA d'Encore"
+    },
+    {
+      "name": "Carhartt WIP",
+      "table": {"sku": "No. Article", "description": "Désignation", "qty": "Quantité", "unit_price_gross": "Prix", "total": "Total"},
+      "match": "carhartt-wip.com",
+      "default_vendor": "Carhartt WIP",
+      "notes": "Remise par ligne : PU Net = Total ÷ Qté. Le fournisseur est la marque."
+    },
+    {
+      "name": "Vans (VF France)",
+      "table": {"sku": "Article", "description": "Description/Reférenc-", "qty": "Quantité", "unit_price_gross": "Prix/pc.", "unit_price_net": "Prix/pc. net", "total": "Mont charg. incl. TVA"},
+      "match": "FR78353238520",
+      "default_vendor": "Vans",
+      "default_type": "shoes",
+      "notes": "Identifiant = n° de TVA de VF (J) France. Type par défaut : chaussures (les tee/hoodies sont reconnus par leurs mots)."
+    },
+    {
+      "name": "VPM",
+      "table": {"description": "Product / Service", "qty": "Quantity", "unit_price_gross": "Price", "total": "Total"},
+      "match": "FR30983268830",
+      "default_type": "shoes",
+      "notes": "SKU dans la désignation (« SKU: F11000410 ») ; pointures codées M08 = 8. Marque non écrite sur la facture : à compléter si besoin."
     }
   ]
 }

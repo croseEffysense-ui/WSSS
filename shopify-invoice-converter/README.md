@@ -52,6 +52,15 @@ Les factures **sans colonne Qté** dont les quantités sont dans une grille sous
 
 **Tailles US → FR** : les tailles étrangères sont converties en tailles françaises dans le CSV (Option « Taille »), à l'aide de tableaux de correspondance modifiables dans **Paramètres ⚙️ → Configuration application → Tailles (US → FR)** (`config/size_conversions.json`, onglet Sheets `size_conversions`). Chaque **type de produit** désigne son tableau (colonne « Tableau de tailles » : chaussures, pantalons W30 → 40, vêtements, casquettes 7 1/8 → 57…). Un **modèle fournisseur** indique le système de ses factures (`size_system` = US/UK, vide = déjà FR/EU) et un tableau par défaut (`size_chart`) quand le type n'est pas reconnu. À l'étape 2, « Tailles du document » permet de forcer le système. Une taille écrite « US 9 » est toujours convertie ; S, M, L… jamais. Une taille absente du tableau reste inchangée avec une alerte. Les barèmes fournis sont des valeurs courantes, à vérifier pour vos marques.
 
+## Règles du CSV (prompt « Shopify Product CSV »)
+- **Rien n'est inventé** : sans prix public TTC sur la facture, le prix de vente reste **vide** (le calcul coût × coefficient × TVA n'est fait que si vous l'activez dans Paramètres ⚙️ → Général). SKU et code-barres sont recopiés **à l'identique** ; toutes les tailles d'un produit partagent le même SKU.
+- **Titre** : `Marque Type - Nom - Couleur` (largeur pour les boards, `Dureté - Diamètre` pour les roues). Les mots-clés du type sont retirés du nom, sauf ceux précédés de `+` (noms de modèles : `+stan smith`, `+half cab`) ; les mots de l'onglet « 4b · Mots retirés des titres » (`(EU)`, `ADULT`…) aussi. Les couleurs peuvent faire plusieurs mots (« Black Dirty Wash »).
+- **Variantes** : taille (2M → M, S/M gardé, pointures codées M08 → 8), largeur de board au 1/8 de pouce (8.06 → 8, 8.375), dureté + diamètre. Handle et noms d'option répétés sur chaque ligne ; même SKU + même variante = quantités additionnées.
+- **Status** `active`, inventaire suivi (`shopify`, `DENY`, `manual`), poids 0,5 kg (board 1 kg), pas de publication sur la boutique en ligne.
+- **Tags** : `nouveautés` + collections du type de produit + collections de la marque (onglet « 6 · Collections », une ligne par collection ; seules les collections de la liste sont utilisées).
+- **Contrôles** : total d'unités rapproché avec le total annoncé par la facture quand il y figure ; un produit sans Type bloque le téléchargement tant que vous ne l'avez pas confirmé.
+- **Modèle fournisseur** : « Marque si absente de la désignation » (seulement si le fournisseur est la marque) et « Type si non reconnu » (ex. fournisseur de chaussures) ne servent que lorsque la désignation ne dit rien.
+
 Limite : les PDF scannés (images sans texte) demandent un OCR préalable.
 
 ## Formats de factures par fournisseur

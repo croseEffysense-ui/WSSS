@@ -48,8 +48,8 @@ def test_eleven_columns_multiline_header_auto():
     assert fields["Taille / Quantité"] == "sizes"
     # une ligne par taille : « 3913 / 1 » = pointure 39 1/3, 1 paire ; la ligne de suite « 4223 / 1 4423 / 1 » est lue aussi
     assert [(i.sku, i.size, i.qty) for i in items] == [
-        ("LC1068-3913", "39 1/3", 1), ("LC1068-40", "40", 1), ("LC1068-4113", "41 1/3", 1),
-        ("LC1068-42", "42", 2), ("LC1068-4223", "42 2/3", 1), ("LC1068-4423", "44 2/3", 1),
+        ("LC1068", "39 1/3", 1), ("LC1068", "40", 1), ("LC1068", "41 1/3", 1),
+        ("LC1068", "42", 2), ("LC1068", "42 2/3", 1), ("LC1068", "44 2/3", 1),  # SKU exact, partagé par les tailles
     ]
     assert sum(i.qty for i in items) == 7 and all(i.unit_price_gross == 50.05 and i.unit_price_net == 46.05 for i in items)
     assert items[3].total == 92.1 and all(i.description == "STAN SMITH ADV X VINCENT MILOU FTWW" and not i.warnings for i in items)
@@ -63,7 +63,7 @@ def test_size_breakdown_mismatch_warns_and_single_size_column():
     assert decode_size("3913") == "39 1/3" and decode_size("4223") == "42 2/3" and decode_size("42") == "42" and decode_size("M") == "M"
     header = L(1, 10, ("Ref", 20), ("Designation", 100), ("Qte", 250), ("Taille / Qte", 300), ("Prix", 420))
     items, _ = parse_pages([[header, L(1, 30, ("AB123", 20), ("Tee", 100), ("5", 255), ("S / 1 M / 2", 300), ("9,00", 420))]])
-    assert [(i.sku, i.size, i.qty) for i in items] == [("AB123-S", "S", 1), ("AB123-M", "M", 2)]
+    assert [(i.sku, i.size, i.qty) for i in items] == [("AB123", "S", 1), ("AB123", "M", 2)]
     assert all("Somme des tailles (3) ≠ Qté totale (5)" in i.warnings for i in items)
     header = L(1, 10, ("Ref", 20), ("Designation", 100), ("Taille", 250), ("Qte", 320), ("Prix", 420))
     items, _ = parse_pages([[header, L(1, 30, ("AB123", 20), ("Tee", 100), ("XL", 255), ("2", 325), ("9,00", 420))]])
@@ -83,7 +83,7 @@ def test_size_grid_without_quantity_column_and_multi_column_description():
     ]
     items, trace = parse_pages([page])
     assert [(i.sku, i.size, i.qty, i.unit_price_net, i.public_price, i.total) for i in items] == [
-        ("DVF0000029985-985-5", "5", 2, 45.0, 100.0, 90.0), ("DVF0000029985-985-6", "6", 1, 45.0, 100.0, 45.0),
+        ("DVF0000029985-985", "5", 2, 45.0, 100.0, 90.0), ("DVF0000029985-985", "6", 1, 45.0, 100.0, 45.0),
     ]  # quantité 0 (taille 5.5) ignorée
     assert items[0].description == "Comanche-326 BLACK REFLECTIVE" and not items[0].warnings  # sans modèle : couleur tronquée
     assert [lt.role for lt in trace.lines][2:5] == ["suite d'article", "suite d'article", "pied de tableau"]
@@ -137,6 +137,16 @@ def test_description_above_sku_and_page_top_continuation():
     assert any(lt.role == "pied de tableau" for lt in trace.lines)
 
 
+def test_group_subtotal_at_page_top_is_not_glued_to_previous_item():
+    header = L(1, 10, ("Product / Service", 65), ("Quantity", 447), ("Price", 494), ("Total", 560))
+    p1 = [header, L(1, 40, ("1PM - Lime - M10", 65)), L(1, 49, ("SKU: F11402440", 65), ("1", 447), ("54.00", 494), ("54.00", 560))]
+    p2 = [L(2, 20, ("1 PM - Red LTR", 65)), L(2, 29, ("6", 447), ("336.00", 560)),  # regroupement : quantité sans référence
+          L(2, 60, ("1 PM - Red LTR - M07", 65)), L(2, 69, ("SKU: F11103400", 65), ("1", 447), ("56.00", 494), ("56.00", 560))]
+    items, trace = parse_pages([p1, p2])
+    assert [i.description for i in items] == ["1PM - Lime - M10", "1 PM - Red LTR - M07"]
+    assert any(lt.detail.startswith("ligne de regroupement") for lt in trace.lines)
+
+
 def test_inline_sku_and_discount_gives_net_cost():
     page = [
         L(1, 10, ("Product / Service", 65), ("Quantity", 447), ("Price", 494), ("Remise", 535), ("Total", 590)),
@@ -184,7 +194,8 @@ def test_formats_from_doc_splits_kinds_and_upsert():
     ]}
     profiles, templates, problems = formats_from_doc(doc)
     assert profiles == {"Simple": ["qty", "total"]}
-    assert templates == {"Adidas": {"table": {"sku": "Article", "qty": "Quantité"}, "match": "adidas", "size_system": "", "size_chart": ""}}
+    assert templates == {"Adidas": {"table": {"sku": "Article", "qty": "Quantité"}, "match": "adidas", "size_system": "",
+                                    "size_chart": "", "default_vendor": "", "default_type": ""}}
     assert len(problems) == 1 and "Cassé" in problems[0]
     new = upsert_template(doc, "adidas", {"sku": "Réf", "qty": "Qté"}, "adidas France")
     assert [f["name"] for f in new["formats"]] == ["Simple", "Cassé", "adidas"] and new["formats"][-1]["match"] == "adidas France"
@@ -204,7 +215,8 @@ def test_sheets_template_row_and_old_three_column_sheet():
     store = SheetsStore(gw, seed=_local())
     doc = store.load("supplier_formats.json")
     assert next(f for f in doc["formats"] if f["name"] == "Adidas")["table"]["qty"] == "Quantité Totale"
-    assert gw.sheets["supplier_formats"][0] == ["name", "columns", "notes", "match", "table", "size_system", "size_chart"]
+    assert gw.sheets["supplier_formats"][0] == ["name", "columns", "notes", "match", "table", "size_system", "size_chart",
+                                                "default_vendor", "default_type"]
     encore = next(f for f in doc["formats"] if f["name"] == "Encore")
     assert (encore["size_system"], encore["size_chart"]) == ("US", "Chaussures")
     gw.sheets["supplier_formats"] = [["name", "columns", "notes"], ["Vans", "Qté, Total", ""]]  # Sheet créé avant la mise à jour
@@ -241,7 +253,7 @@ def test_analyze_prefers_recognised_supplier_template(fake_pdf):
     _, templates, _ = load_formats()
     a = fake_pdf.analyze(b"%PDF", fake_pdf.AUTO, PROFILES, templates)
     assert not a.error and a.chosen.name == "Adidas" and a.chosen.supplier_match
-    assert a.items[0].sku == "LC1068-3913" and "Qté = « Quantité Totale »" in a.chosen.describe()
+    assert a.items[0].sku == "LC1068" and "Qté = « Quantité Totale »" in a.chosen.describe()
     assert "Tailles / Quantités = « Taille / Quantité »" in a.chosen.describe()
     assert {c.method for c in a.candidates} == {fake_pdf.METHOD_TEMPLATE, fake_pdf.METHOD_AUTO_TABLE, fake_pdf.METHOD_TAIL}
 

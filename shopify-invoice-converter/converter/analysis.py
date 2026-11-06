@@ -10,6 +10,7 @@ Module sans Streamlit : testable isolément.
 from __future__ import annotations
 
 import io
+import re
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -24,6 +25,19 @@ METHOD_TEMPLATE = "Modèle par en-têtes"
 METHOD_AUTO_TABLE = "En-têtes reconnus automatiquement"
 METHOD_TAIL = "Colonnes de fin de ligne"
 _METHOD_RANK = {METHOD_TEMPLATE: 2, METHOD_AUTO_TABLE: 1, METHOD_TAIL: 0}
+# Total d'unités annoncé par la facture : « Total units: 50 », « Nombre total de produits : 31 », « Quantité totale : 12 »
+DECLARED_UNITS_RE = re.compile(
+    r"(?:total\s+(?:units?|unit[ée]s|pi[eè]ces|quantit[ée]s?|qt[ée]s?|articles|pairs|paires)"
+    r"|nombre\s+(?:total\s+)?de\s+(?:produits|pi[eè]ces|articles|paires)"
+    r"|quantit[ée]\s+totale(?:\s+livr[ée]e)?)\s*:?\s*(\d{1,6})(?![\d.,])",
+    re.I,
+)
+
+
+def declared_units(text: str) -> Optional[int]:
+    """Total d'unités écrit sur la facture (le dernier trouvé), ou None s'il n'y en a pas."""
+    found = DECLARED_UNITS_RE.findall(text or "")
+    return int(found[-1]) if found else None
 
 
 @dataclass
@@ -71,6 +85,11 @@ class Analysis:
     @property
     def items(self) -> list[LineItem]:
         return self.chosen.items if self.chosen else []
+
+    @property
+    def declared_units(self) -> Optional[int]:
+        """Total d'unités annoncé par la facture (pour le rapprochement avec les unités lues)."""
+        return declared_units(self.text)
 
     @property
     def table_trace(self) -> Optional[TableTrace]:

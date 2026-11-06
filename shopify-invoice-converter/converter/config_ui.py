@@ -5,6 +5,7 @@ Les fonctions `validate_*` sont pures (sans Streamlit) pour pouvoir être testé
 from __future__ import annotations
 
 import json
+from typing import Optional
 
 import pandas as pd
 import streamlit as st
@@ -13,6 +14,7 @@ from .config import get_store, load_json, save_json
 from .formats import (
     FIELD_LABELS, MAX_COLUMNS, TABLE_FIELDS, field_key, normalize_label, profiles_from_doc, validate_format, validate_table,
 )
+from .normalizer import as_list
 from .sizes import DOC_SIZES, SIZE_SYSTEMS, chart_names, size_key, validate_charts
 from .storage import DOC_FORMATS, VALID_KINDS
 
@@ -128,23 +130,35 @@ def validate_mapping(df: pd.DataFrame) -> tuple[dict[str, str], list[str]]:
     return mapping, errors
 
 
-def validate_collections(allowed_df: pd.DataFrame, by_df: pd.DataFrame) -> tuple[dict, list[str]]:
-    allowed, errors = clean_list(allowed_df["Collection"], "Collections autorisées")
-    by_type: dict[str, str] = {}
-    for _, r in by_df.iterrows():
-        key = _cell(r.get("type_key"))
-        coll = _cell(r.get("collection"))
+def _collection_pairs(df: Optional[pd.DataFrame], key_col: str, what: str, allowed: list[str]) -> tuple[dict, list[str]]:
+    """Lignes (clé, collection) -> {clé: collection | [collections]} ; plusieurs lignes par clé permises."""
+    out: dict = {}
+    errors: list[str] = []
+    seen: set[tuple[str, str]] = set()
+    for _, r in (df if df is not None else pd.DataFrame()).iterrows():
+        key, coll = _cell(r.get(key_col)), _cell(r.get("collection"))
         if not key and not coll:
             continue
         if not key or not coll:
-            errors.append("Association type → collection incomplète")
+            errors.append(f"Association {what} → collection incomplète")
         elif coll not in allowed:
-            errors.append(f"« {coll} » n'est pas dans la liste blanche (orthographe exacte requise)")
-        elif key in by_type:
-            errors.append(f"type_key « {key} » en double")
+            errors.append(f"« {coll} » n'est pas dans la liste de vos collections (orthographe exacte requise)")
+        elif (key.lower(), coll) in seen:
+            errors.append(f"« {key} » → « {coll} » en double")
         else:
-            by_type[key] = coll
-    return {"allowed": allowed, "by_type_key": by_type}, errors
+            seen.add((key.lower(), coll))
+            out[key] = coll if key not in out else [*([out[key]] if isinstance(out[key], str) else out[key]), coll]
+    return out, errors
+
+
+def validate_collections(
+    allowed_df: pd.DataFrame, by_df: pd.DataFrame, brand_df: Optional[pd.DataFrame] = None
+) -> tuple[dict, list[str]]:
+    """Liste des collections + associations type → collection(s) et marque → collection(s)."""
+    allowed, errors = clean_list(allowed_df["Collection"], "Collections autorisées")
+    by_type, e1 = _collection_pairs(by_df, "type_key", "type", allowed)
+    by_brand, e2 = _collection_pairs(brand_df, "brand", "marque", allowed)
+    return {"allowed": allowed, "by_type_key": by_type, "by_brand": by_brand}, errors + e1 + e2
 
 
 FORMAT_COLUMNS = [f"Colonne {i}" for i in range(1, MAX_COLUMNS + 1)]
@@ -178,6 +192,7 @@ def validate_templates(df: pd.DataFrame) -> tuple[list[dict], list[str]]:
     for n, (_, r) in enumerate(df.iterrows(), start=1):
         name, match, notes = _cell(r.get("name")), _cell(r.get("match")), _cell(r.get("notes"))
         system, chart = _cell(r.get("size_system")).upper(), _cell(r.get("size_chart"))
+        vendor, dtype = _cell(r.get("default_vendor")), _cell(r.get("default_type"))
         table = {fld: _cell(r.get(label)) for fld, label in TABLE_FIELDS.items() if _cell(r.get(label))}
         if not (name or table or match or notes):
             continue  # ligne vide
@@ -189,7 +204,8 @@ def validate_templates(df: pd.DataFrame) -> tuple[list[dict], list[str]]:
                 errors.append(f"Modèle {n} : fournisseur « {name} » en double")
             names.add(name.lower())
         entry = {"name": name, "table": table, "match": match}
-        entry.update({k: v for k, v in (("size_system", system), ("size_chart", chart)) if v})
+        entry.update({k: v for k, v in (("size_system", system), ("size_chart", chart),
+                                        ("default_vendor", vendor), ("default_type", dtype)) if v})
         templates.append({**entry, "notes": notes})
     return templates, errors
 
@@ -201,7 +217,7 @@ def _alpha(text) -> str:
 
 def sort_section(doc_name: str, data: dict, section: str = "") -> dict:
     """Copie de `data` avec les éléments de la section triés par ordre alphabétique."""
-    if doc_name == "product_rules.json" and section in ("brands", "colors"):
+    if doc_name == "product_rules.json" and section in ("brands", "colors", "title_ignore"):
         return {**data, section: sorted(data.get(section, []), key=_alpha)}
     if doc_name == "product_rules.json" and section == "product_types":
         return {**data, "product_types": sorted(data.get("product_types", []), key=lambda r: _alpha(r.get("type_key", "")))}
@@ -209,10 +225,14 @@ def sort_section(doc_name: str, data: dict, section: str = "") -> dict:
         meta = {k: v for k, v in data.items() if k.startswith("_")}
         return {**meta, **dict(sorted(((k, v) for k, v in data.items() if not k.startswith("_")), key=lambda kv: _alpha(kv[0])))}
     if doc_name == "collections.json":
+        def by_key(mapping: dict) -> dict:
+            return {k: (v if isinstance(v, str) else sorted(v, key=_alpha))
+                    for k, v in sorted(mapping.items(), key=lambda kv: _alpha(kv[0]))}
         return {
             **data,
             "allowed": sorted(data.get("allowed", []), key=_alpha),
-            "by_type_key": dict(sorted(data.get("by_type_key", {}).items(), key=lambda kv: _alpha(kv[0]))),
+            "by_type_key": by_key(data.get("by_type_key", {})),
+            "by_brand": by_key(data.get("by_brand", {})),
         }
     if doc_name == DOC_FORMATS:
         return {**data, "formats": sorted(data.get("formats", []), key=lambda f: _alpha(f.get("name", "")))}
@@ -268,10 +288,10 @@ def _list_editor(title: str, file: str, key: str, label: str, intro: str = "", c
     data = load_json(file)
     if intro:
         st.caption(intro)
-    st.caption(f"{len(data[key])} élément(s). Ajoutez une ligne avec ➕ en bas du tableau, supprimez en cochant la ligne puis 🗑️.")
+    st.caption(f"{len(data.get(key, []))} élément(s). Ajoutez une ligne avec ➕ en bas du tableau, supprimez en cochant la ligne puis 🗑️.")
     _sort_button(file, data, key)
     edited = st.data_editor(
-        _text_df(pd.DataFrame({label: data[key]})), num_rows="dynamic", width="stretch", key=f"ed_{file}_{key}_{_ver()}",
+        _text_df(pd.DataFrame({label: data.get(key, [])})), num_rows="dynamic", width="stretch", key=f"ed_{file}_{key}_{_ver()}",
         column_config={label: st.column_config.TextColumn(column_title or label, width="large")},
     )
     if st.button(f"💾 Enregistrer {title.lower()}", key=f"save_{file}_{key}"):
@@ -374,16 +394,21 @@ def _mapping_tab() -> None:
 def _collections_tab() -> None:
     data = load_json("collections.json")
     rules = load_json("product_rules.json")
-    _sort_button("collections.json", data, help="Trie la liste blanche et les associations (par type_key).")
+    _sort_button("collections.json", data, help="Trie les trois tableaux (collections, par type, par marque).")
+    st.caption(
+        "Un produit peut rejoindre **plusieurs collections** : celles de son type (tableau 2) **et** celles de sa "
+        "marque (tableau 3). Mettez une ligne par collection. Seules les collections du tableau 1 sont utilisées, "
+        "et le tag « nouveautés » est toujours ajouté."
+    )
     st.markdown("**1. Vos collections Shopify** (liste blanche : seules celles-ci peuvent être ajoutées en tag)")
     allowed_df = st.data_editor(
         _text_df(pd.DataFrame({"Collection": data["allowed"]})), num_rows="dynamic", width="stretch", key=f"ed_allowed_{_ver()}",
         column_config={"Collection": st.column_config.TextColumn("Nom exact de la collection Shopify", width="large")},
     )
-    st.markdown("**2. Quelle collection pour quel type de produit** (son nom est ajouté dans la colonne *Tags*)")
+    st.markdown("**2. Collection(s) par type de produit** (une ligne par collection)")
     by_df = st.data_editor(
         _text_df(pd.DataFrame(
-            [{"type_key": k, "collection": v} for k, v in data["by_type_key"].items()],
+            [{"type_key": k, "collection": c} for k, v in data["by_type_key"].items() for c in as_list(v)],
             columns=["type_key", "collection"],
         )),
         num_rows="dynamic",
@@ -396,8 +421,24 @@ def _collections_tab() -> None:
             ),
         },
     )
+    st.markdown("**3. Collection(s) par marque** (ex. Santa Cruz → « Santa Cruz » ; une ligne par collection)")
+    brand_df = st.data_editor(
+        _text_df(pd.DataFrame(
+            [{"brand": k, "collection": c} for k, v in data.get("by_brand", {}).items() for c in as_list(v)],
+            columns=["brand", "collection"],
+        )),
+        num_rows="dynamic",
+        width="stretch",
+        key=f"ed_by_brand_{_ver()}",
+        column_config={
+            "brand": st.column_config.SelectboxColumn("Marque", options=rules.get("brands", []), help="Marques de l'onglet 1."),
+            "collection": st.column_config.SelectboxColumn(
+                "Collection ajoutée en tag", options=data["allowed"], help="À choisir dans la liste 1 (enregistrez-la d'abord).",
+            ),
+        },
+    )
     if st.button("💾 Enregistrer les collections", key="save_collections"):
-        new_data, errors = validate_collections(allowed_df, by_df)
+        new_data, errors = validate_collections(allowed_df, by_df, brand_df)
         if errors:
             _show_errors(errors)
         elif _save("collections.json", new_data, data):
@@ -421,11 +462,13 @@ def _templates_editor(doc: dict) -> None:
     rows = [
         {"name": f.get("name", ""), "match": f.get("match", ""),
          **{label: f["table"].get(fld) for fld, label in TABLE_FIELDS.items()},
-         "size_system": f.get("size_system", ""), "size_chart": f.get("size_chart", ""), "notes": f.get("notes", "")}
+         "size_system": f.get("size_system", ""), "size_chart": f.get("size_chart", ""),
+         "default_vendor": f.get("default_vendor", ""), "default_type": f.get("default_type", ""), "notes": f.get("notes", "")}
         for f in doc.get("formats", []) if _is_template(f)
     ]
     edited = st.data_editor(
-        _text_df(pd.DataFrame(rows, columns=["name", "match", *TABLE_FIELDS.values(), "size_system", "size_chart", "notes"])),
+        _text_df(pd.DataFrame(rows, columns=["name", "match", *TABLE_FIELDS.values(), "size_system", "size_chart",
+                                             "default_vendor", "default_type", "notes"])),
         num_rows="dynamic",
         width="stretch",
         key=f"ed_templates_{_ver()}",
@@ -439,6 +482,13 @@ def _templates_editor(doc: dict) -> None:
                 + (" (plusieurs colonnes possibles : Produit + Couleur)" if fld == "description" else ""),
             ) for fld, lab in TABLE_FIELDS.items()},
             "size_system": st.column_config.SelectboxColumn("Ses tailles sont en", options=SIZE_SYSTEMS, help="Vide = tailles déjà FR/EU"),
+            "default_vendor": st.column_config.TextColumn(
+                "Marque si absente de la désignation", help="Seulement si le fournisseur EST la marque (ex. Adidas, DVS). Jamais un distributeur.",
+            ),
+            "default_type": st.column_config.SelectboxColumn(
+                "Type si non reconnu", options=[r["type_key"] for r in load_json("product_rules.json")["product_types"]],
+                help="Code du type utilisé quand aucun mot de la désignation n'identifie le type (ex. shoes pour un fournisseur de chaussures).",
+            ),
             "size_chart": st.column_config.SelectboxColumn(
                 "Tableau de tailles par défaut", options=chart_names(load_json(DOC_SIZES)),
                 help="Utilisé quand le type de produit n'est pas reconnu (ex. fournisseur de chaussures).",
@@ -571,9 +621,10 @@ Les onglets suivants sont rangés **dans l'ordre où les morceaux sont reconnus*
   ⚠️ Les lignes sont testées **de haut en bas : la première qui correspond gagne.**
 - **3 · Tailles (US → FR)** — sert **uniquement** aux factures en tailles américaines/anglaises : traduit « 9 » en « 42 ».
   Les tailles en lettres (S, M, L…) ne sont jamais traduites.
-- **4 · Couleurs** — les mots de couleur, placés à la fin du titre. Une autre couleur = un **autre produit** (pas une variante).
+- **4 · Couleurs** — les couleurs (un mot ou une expression : « Black Dirty Wash »), placées à la fin du titre. Une autre couleur = un **autre produit** (pas une variante).
+- **4b · Mots retirés des titres** — les mots sans intérêt enlevés des désignations (« (EU) », « ADULT »…).
 - **5 · Type Shopify** — pour chaque type de produit, la **catégorie exacte** de votre boutique Shopify (*Product Type*).
-- **6 · Collections** — pour chaque type de produit, la **collection** à ajouter (dans la colonne *Tags*).
+- **6 · Collections** — pour chaque type de produit **et** chaque marque, les **collections** à ajouter (dans la colonne *Tags*). Un produit peut en avoir plusieurs.
 
 ---
 
@@ -583,7 +634,7 @@ Les onglets suivants sont rangés **dans l'ordre où les morceaux sont reconnus*
 2. **Même titre = même produit** : les lignes qui donnent le même titre sont regroupées et leurs tailles deviennent des variantes.
 3. **Ce qui n'est pas reconnu reste dans le titre** (ex. « (EU) », « ADULT »). Corrigez-le à l'étape 2, ou ajoutez le
    mot manquant dans la bonne liste.
-4. Chaque produit reçoit toujours le tag **nouveautés**.
+4. Chaque produit reçoit toujours le tag **nouveautés**. Le **SKU** reste celui de la facture, et un prix absent de la facture reste **vide** (jamais inventé).
 5. Le **code du type** (ex. `tee`) relie les onglets 2, 3, 5 et 6 : utilisez exactement le même partout.
 
 ---
@@ -614,10 +665,17 @@ Pour savoir ce qui manque : l'onglet **📋 Diagnostic configuration**, et les *
 
 def render_business_config() -> None:
     """Consultation/édition des fichiers de config métier (affiché dans Paramètres ⚙️), dans l'ordre du traitement."""
-    t_help, t_formats, t_brands, t_types, t_sizes, t_colors, t_map, t_coll, t_raw = st.tabs(
+    t_help, t_formats, t_brands, t_types, t_sizes, t_colors, t_ignore, t_map, t_coll, t_raw = st.tabs(
         ["❓ Aide", "0 · Modèles de facture", "1 · Marques", "2 · Types de produit", "3 · Tailles (US → FR)",
-         "4 · Couleurs", "5 · Type Shopify", "6 · Collections", "JSON brut"]
+         "4 · Couleurs", "4b · Mots retirés des titres", "5 · Type Shopify", "6 · Collections", "JSON brut"]
     )
+    with t_ignore:
+        _list_editor(
+            "Mots retirés", "product_rules.json", "title_ignore", "Mot",
+            intro="Mots ou expressions **sans intérêt** retirés des désignations avant de fabriquer le titre "
+            "(ex. « (EU) », « ADULT »). Retirés partout, même collés à un autre mot : « T-Shirt(EU) ».",
+            column_title="Mot ou expression à retirer des titres",
+        )
     with t_help:
         st.markdown(HELP_MD)
     with t_formats:
@@ -636,9 +694,10 @@ def render_business_config() -> None:
     with t_colors:
         _list_editor(
             "Couleurs", "product_rules.json", "colors", "Couleur",
-            intro="Si un de ces mots est trouvé dans la désignation, il est placé à la **fin du titre** (« … - Black »). "
-            "Écrivez-les comme sur les factures (souvent en anglais). Un seul mot par ligne.",
-            column_title="Mot de couleur (tel qu'écrit sur les factures)",
+            intro="Si une de ces couleurs est trouvée dans la désignation, elle est placée à la **fin du titre** (« … - Black »). "
+            "Expressions de plusieurs mots acceptées (« Sky Multi », « Black Dirty Wash ») : la plus à droite gagne. "
+            "Écrivez-les comme vous voulez les voir dans le titre.",
+            column_title="Couleur (un mot ou une expression)",
         )
     with t_map:
         _mapping_tab()

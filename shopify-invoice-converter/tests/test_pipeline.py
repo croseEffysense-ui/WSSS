@@ -83,7 +83,7 @@ def test_empty_text_tables_are_editable_and_blank_cells_ignored():
     allowed = _text_df(pd.DataFrame({"Collection": ["Skate", None]}))
     by_type = _text_df(pd.DataFrame([{"type_key": "deck", "collection": "Skate"}, {"type_key": None, "collection": None}]))
     data, errs = validate_collections(allowed, by_type)  # cellules vides = pd.NA : ignorées, jamais « <NA> »
-    assert data == {"allowed": ["Skate"], "by_type_key": {"deck": "Skate"}} and not errs
+    assert data == {"allowed": ["Skate"], "by_type_key": {"deck": "Skate"}, "by_brand": {}} and not errs
     assert clean_list(pd.Series(["A", pd.NA], dtype="string"), "x") == (["A"], [])
     mapping, errs = validate_mapping(_text_df(pd.DataFrame([{"type_key": "tee", "product_type": None}])))
     assert mapping == {"tee": ""} and not errs

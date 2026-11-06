@@ -63,7 +63,7 @@ def build_dataframe(products: list[Product], columns: list[str]) -> pd.DataFrame
                     "Type": p.product_type,
                     "Tags": p.tags,
                     "Published on online store": "FALSE",  # canaux : Whatnot + POS uniquement
-                    "Status": "Active",
+                    "Status": "active",
                     "Gift card": "FALSE",
                 }
             )

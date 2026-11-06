@@ -188,6 +188,9 @@ def formats_from_doc(doc: dict) -> tuple[dict[str, list[str]], dict[str, dict], 
                 "match": str(entry.get("match") or "").strip(),
                 "size_system": str(entry.get("size_system") or "").strip().upper(),  # vide = tailles déjà FR/EU
                 "size_chart": str(entry.get("size_chart") or "").strip(),  # tableau par défaut (type de produit inconnu)
+                # si la désignation ne contient ni marque ni type reconnus (fournisseur = la marque, fournisseur de chaussures…)
+                "default_vendor": str(entry.get("default_vendor") or "").strip(),
+                "default_type": str(entry.get("default_type") or "").strip(),
             }
         else:
             profiles[name] = columns
@@ -201,11 +204,13 @@ def profiles_from_doc(doc: dict) -> tuple[dict[str, list[str]], list[str]]:
 
 
 def upsert_template(
-    doc: dict, name: str, table: dict[str, str], match: str = "", notes: str = "", size_system: str = "", size_chart: str = ""
+    doc: dict, name: str, table: dict[str, str], match: str = "", notes: str = "", size_system: str = "", size_chart: str = "",
+    default_vendor: str = "", default_type: str = "",
 ) -> dict:
     """Ajoute (ou remplace, même nom sans tenir compte de la casse) un modèle par en-têtes ; retourne le nouveau doc."""
     entry = {"name": name.strip(), "table": {k: v for k, v in table.items() if str(v).strip()}, "match": match.strip()}
-    entry.update({k: v.strip() for k, v in (("size_system", size_system.upper()), ("size_chart", size_chart)) if v.strip()})
+    entry.update({k: v.strip() for k, v in (("size_system", size_system.upper()), ("size_chart", size_chart),
+                                           ("default_vendor", default_vendor), ("default_type", default_type)) if v.strip()})
     entry["notes"] = notes
     formats = [f for f in doc.get("formats", []) if str(f.get("name", "")).strip().lower() != name.strip().lower()]
     return {**doc, "formats": [*formats, entry]}

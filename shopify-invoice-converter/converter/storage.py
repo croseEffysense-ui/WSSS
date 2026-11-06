@@ -41,18 +41,20 @@ SHEET_SCHEMAS: dict[str, list[str]] = {
     "type_mapping": ["type_key", "product_type"],
     "collections_allowed": ["collection"],
     "collections_by_type": ["type_key", "collection"],
+    "collections_by_brand": ["brand", "collection"],
+    "title_ignore": ["word"],
     "supplier_formats": ["name", "columns", "notes"],
     "size_conversions": ["chart", "system", "from", "to"],
 }
 # Colonnes facultatives : lues si présentes (Sheets créés avant leur ajout), toujours écrites
 SHEET_OPTIONAL: dict[str, list[str]] = {
     "product_types": ["size_chart"],
-    "supplier_formats": ["match", "table", "size_system", "size_chart"],
+    "supplier_formats": ["match", "table", "size_system", "size_chart", "default_vendor", "default_type"],
 }
 DOC_SHEETS: dict[str, list[str]] = {
-    DOC_RULES: ["brands", "colors", "product_types", "settings"],
+    DOC_RULES: ["brands", "colors", "product_types", "settings", "title_ignore"],
     DOC_MAPPING: ["type_mapping"],
-    DOC_COLLECTIONS: ["collections_allowed", "collections_by_type"],
+    DOC_COLLECTIONS: ["collections_allowed", "collections_by_type", "collections_by_brand"],
     DOC_FORMATS: ["supplier_formats"],
     DOC_SIZES: ["size_conversions"],
 }
@@ -158,6 +160,28 @@ def _split(value: str) -> list[str]:
     return [p.strip() for p in value.split(",") if p.strip()]
 
 
+def _grouped(records: list[dict[str, str]], key: str) -> dict:
+    """Une ligne par (clé, collection) -> {clé: collection} ou {clé: [collections]} si plusieurs."""
+    out: dict = {}
+    for r in records:
+        k, coll = r[key], r["collection"]
+        if not (k and coll):
+            continue
+        if k not in out:
+            out[k] = coll
+        else:
+            out[k] = [*([out[k]] if isinstance(out[k], str) else out[k]), coll]
+    return out
+
+
+def _ungrouped(mapping: Mapping) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for k, v in mapping.items():
+        for coll in ([v] if isinstance(v, str) else list(v or [])):
+            rows.append([k, coll])
+    return rows
+
+
 def sheets_to_doc(name: str, sheets: Mapping[str, Rows]) -> dict:
     """Reconstruit un document de config à partir des onglets."""
     t = lambda s: _table(list(sheets.get(s) or []), s)  # noqa: E731
@@ -179,13 +203,15 @@ def sheets_to_doc(name: str, sheets: Mapping[str, Rows]) -> dict:
             "colors": [r["color"] for r in t("colors") if r["color"]],
             "product_types": types,
             "sized_numeric_kinds": _split(settings.get("sized_numeric_kinds", "apparel")),
+            "title_ignore": [r["word"] for r in t("title_ignore") if r["word"]],
         }
     if name == DOC_MAPPING:
         return {r["type_key"]: r["product_type"] for r in t("type_mapping") if r["type_key"]}
     if name == DOC_COLLECTIONS:
         return {
             "allowed": [r["collection"] for r in t("collections_allowed") if r["collection"]],
-            "by_type_key": {r["type_key"]: r["collection"] for r in t("collections_by_type") if r["type_key"] and r["collection"]},
+            "by_type_key": _grouped(t("collections_by_type"), "type_key"),
+            "by_brand": _grouped(t("collections_by_brand"), "brand"),
         }
     if name == DOC_FORMATS:
         formats = []
@@ -195,7 +221,7 @@ def sheets_to_doc(name: str, sheets: Mapping[str, Rows]) -> dict:
             entry: dict = {"name": r["name"]}
             if r["table"]:  # modèle par en-têtes
                 entry.update(table=table_from_text(r["table"]), match=r["match"])
-                entry.update({k: r[k] for k in ("size_system", "size_chart") if r[k]})
+                entry.update({k: r[k] for k in ("size_system", "size_chart", "default_vendor", "default_type") if r[k]})
             else:
                 entry["columns"] = columns_from_text(r["columns"])
             entry["notes"] = r["notes"]
@@ -226,20 +252,23 @@ def doc_to_sheets(name: str, data: Mapping) -> dict[str, Rows]:
                  for r in data.get("product_types", [])],
             ),
             "settings": sheet("settings", [["sized_numeric_kinds", ", ".join(data.get("sized_numeric_kinds", ["apparel"]))]]),
+            "title_ignore": sheet("title_ignore", [[w] for w in data.get("title_ignore", [])]),
         }
     if name == DOC_MAPPING:
         return {"type_mapping": sheet("type_mapping", [[k, str(v or "")] for k, v in data.items() if not k.startswith("_")])}
     if name == DOC_COLLECTIONS:
         return {
             "collections_allowed": sheet("collections_allowed", [[c] for c in data.get("allowed", [])]),
-            "collections_by_type": sheet("collections_by_type", [[k, v] for k, v in data.get("by_type_key", {}).items()]),
+            "collections_by_type": sheet("collections_by_type", _ungrouped(data.get("by_type_key", {}))),
+            "collections_by_brand": sheet("collections_by_brand", _ungrouped(data.get("by_brand", {}))),
         }
     if name == DOC_FORMATS:
         return {
             "supplier_formats": sheet(
                 "supplier_formats",
                 [[f.get("name", ""), columns_to_text(f.get("columns", [])), f.get("notes", ""), f.get("match", ""),
-                  table_to_text(f.get("table") or {}), f.get("size_system", ""), f.get("size_chart", "")]
+                  table_to_text(f.get("table") or {}), f.get("size_system", ""), f.get("size_chart", ""),
+                  f.get("default_vendor", ""), f.get("default_type", "")]
                  for f in data.get("formats", [])],
             )
         }

@@ -198,5 +198,10 @@
   ],
   "sized_numeric_kinds": [
     "apparel"
+  ],
+  "title_ignore": [
+    "(EU)",
+    "(UK)",
+    "ADULT"
   ]
 }

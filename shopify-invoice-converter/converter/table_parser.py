@@ -463,8 +463,13 @@ def parse_pages(pages: list[list[Line]], mapping: Optional[dict[str, str]] = Non
         traces[id(ln)].role, traces[id(ln)].detail = role, detail
 
     def flush(pending: list[Line], page_top: bool) -> None:
+        # une quantité sans référence = ligne de regroupement / sous-total (ex. VPM « 1 PM - Red LTR » + « 6 336.00 ») :
+        # ce n'est pas la suite de l'article de la page précédente
+        group_row = "qty" in by_field(columns) and any(_numeric(ln, "qty", columns) for ln in pending)
         for ln in pending:
-            if page_top and rows:
+            if group_row:
+                mark(ln, ROLE_IGNORED, "ligne de regroupement (quantité sans référence)")
+            elif page_top and rows:
                 rows[-1][1].append(ln)
                 mark(ln, ROLE_CONT, f"haut de page : suite de {rows[-1][0].text.split()[0]}")
             else:
@@ -616,7 +621,7 @@ def _build_items(anchor: Line, extra: list[Line], columns: list[Column], trace: 
     for code, q, _ in pairs:
         variant = replace(
             item,
-            sku=f"{item.sku}-{code}" if item.sku else code,  # un SKU par variante (exigé par Shopify)
+            sku=item.sku,  # SKU exact du fournisseur, partagé par les tailles (la variante = SKU + taille)
             qty=q,
             size=decode_size(code),
             total=round(q * item.unit_price_net, 2) if item.unit_price_net is not None else None,
