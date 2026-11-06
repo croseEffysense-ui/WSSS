@@ -1,4 +1,5 @@
-from converter.config import load_json, load_profiles, template_columns
+from converter.config import load_json, template_columns
+from converter.formats import profiles_from_doc
 from converter.normalizer import normalize_item, normalize_size
 from converter.pdf_parser import parse_text
 from converter.reconciliation import reconcile
@@ -7,7 +8,14 @@ from converter.shopify_builder import build_dataframe
 RULES = load_json("product_rules.json")
 MAPPING = load_json("product_type_mapping.json")
 COLL = load_json("collections.json")
-PROFILES, _ = load_profiles()
+# Formats de référence des tests (indépendants de config/supplier_formats.json, que l'utilisateur modifie)
+TEST_FORMATS = {"formats": [
+    {"name": "Facture simple (Qté, PU HT, Total)", "columns": ["qty", "unit_price_net", "total"]},
+    {"name": "BL complet (Qté, PU HT, PU Net, Total, Prix public TTC)", "columns": ["qty", "unit_price_gross", "unit_price_net", "total", "public_price"]},
+    {"name": "BL (Qté, PU HT, PU Net, Prix public TTC)", "columns": ["qty", "unit_price_gross", "unit_price_net", "public_price"]},
+    {"name": "Bon de commande (Qté, PU)", "columns": ["qty", "unit_price_net"]},
+]}
+PROFILES, _ = profiles_from_doc(TEST_FORMATS)
 BL = PROFILES["BL complet (Qté, PU HT, PU Net, Total, Prix public TTC)"]
 
 SAMPLE = """Page 1
@@ -67,6 +75,29 @@ def test_reconcile_ok_and_ko():
     assert not r.ok and r.quantities == [4, None] and len(r.discrepancies) == 3
 
 
+def test_empty_text_tables_are_editable_and_blank_cells_ignored():
+    import pandas as pd
+    from converter.config_ui import _text_df, clean_list, validate_collections, validate_mapping, validate_types
+    # tableau vide : la colonne doit être du texte (sinon Streamlit refuse la saisie de texte)
+    assert str(_text_df(pd.DataFrame({"Collection": []}))["Collection"].dtype) == "string"
+    allowed = _text_df(pd.DataFrame({"Collection": ["Skate", None]}))
+    by_type = _text_df(pd.DataFrame([{"type_key": "deck", "collection": "Skate"}, {"type_key": None, "collection": None}]))
+    data, errs = validate_collections(allowed, by_type)  # cellules vides = pd.NA : ignorées, jamais « <NA> »
+    assert data == {"allowed": ["Skate"], "by_type_key": {"deck": "Skate"}} and not errs
+    assert clean_list(pd.Series(["A", pd.NA], dtype="string"), "x") == (["A"], [])
+    mapping, errs = validate_mapping(_text_df(pd.DataFrame([{"type_key": "tee", "product_type": None}])))
+    assert mapping == {"tee": ""} and not errs
+    rules, errs = validate_types(_text_df(pd.DataFrame([{"keywords": None, "type_key": None, "kind": None, "label": None}])))
+    assert rules == [] and not errs
+
+
+def test_kind_shown_with_label_is_saved_as_code():
+    import pandas as pd
+    from converter.config_ui import KIND_LABELS, validate_types
+    rules, errs = validate_types(pd.DataFrame([{"keywords": "tee", "type_key": "tee", "kind": KIND_LABELS["apparel"], "label": "T-Shirt"}]))
+    assert not errs and rules[0]["kind"] == "apparel"
+
+
 def test_config_validation():
     import pandas as pd
     from converter.config_ui import clean_list, validate_collections, validate_mapping, validate_types
@@ -109,7 +140,7 @@ def test_detect_profile_picks_best_format():
 def test_config_health():
     from converter.config import config_health
     issues = config_health(RULES, MAPPING, COLL)
-    assert any("sans Product Type" in i for i in issues)
+    assert any("sans Type Shopify" in i for i in issues)
     assert config_health({"brands": ["A"], "product_types": []}, {}, {"allowed": ["X"]}) == []
 
 
@@ -224,7 +255,7 @@ def test_config_health_flags_invalid_kind_and_duplicates():
     rules = {"brands": ["A"], "product_types": [
         {"type_key": "a", "kind": "oops"}, {"type_key": "a", "kind": "deck"}]}
     out = " ".join(config_health(rules, {"a": "X"}, {"allowed": ["Y"]}))
-    assert "kind invalide" in out and "en double" in out
+    assert "« Variantes créées » invalide" in out and "en double" in out
 
 
 # ----------------------------- Logs & diagnostic -----------------------------
@@ -326,8 +357,9 @@ def test_misnamed_secrets_file_is_visible(tmp_path, monkeypatch):
 # ----------------------------- Formats fournisseurs -----------------------------
 def test_shipped_formats_are_all_valid():
     from converter.config import config_health
-    profiles, problems = load_profiles()
-    assert len(profiles) == 4 and not problems
+    from converter.config import load_formats
+    profiles, templates, problems = load_formats()
+    assert (profiles or templates) and not problems
     assert not any("format" in i.lower() for i in config_health(RULES, MAPPING, COLL, _local().load("supplier_formats.json")))
 
 

@@ -41,24 +41,34 @@ tests/
 ## Lecture des factures
 La **détection automatique** essaie, dans cet ordre de préférence :
 1. les **modèles par en-têtes** enregistrés, en priorité celui dont l'*identifiant* (nom, n° de TVA…) figure dans le PDF ;
-2. la **lecture automatique du tableau** : l'en-tête (« Quantité », « Prix Net », « Montant HT »…, même sur 2-3 lignes) est reconnu, et chaque nombre est rangé sous l'en-tête le plus proche. Elle fonctionne quel que soit le nombre de colonnes : les colonnes inutiles (Remise, TVA, Taille…) sont ignorées. Sans colonne de prix net mais avec une remise, le PU Net est calculé à partir de Total ÷ Qté ;
+2. la **lecture automatique du tableau** : l'en-tête (« Quantité », « Prix Net », « Montant HT »…, même sur 2-3 lignes) est reconnu, et chaque nombre est rangé sous l'en-tête le plus proche. Elle fonctionne quel que soit le nombre de colonnes : les colonnes inutiles (Remise, TVA, Taille…) sont ignorées. Sans colonne de prix net mais avec une remise, le PU Net est calculé à partir de Total ÷ Qté. Une colonne **« Taille / Quantité »** (`3913 / 1  40 / 1  42 / 2…`, éventuellement sur plusieurs lignes) donne **une ligne par taille** : variante Shopify « Taille », SKU `LC1068-3913`, pointures Adidas décodées (`3913` = 39 1/3, `4223` = 42 2/3), avec une alerte si la somme des tailles ne correspond pas à la Qté totale ;
 3. les formats **« colonnes de fin de ligne »** ci-dessous.
 
-**🐞 Mode debug** (barre latérale) : sous le PDF déposé, on voit les méthodes testées, les colonnes détectées, le rôle de chaque ligne (en-tête, article, suite, pied, ignorée) et pourquoi, le texte brut et les coordonnées des mots. L'onglet **💾 Créer un modèle** permet de choisir la ligne d'en-tête, d'associer chaque information à une colonne, de vérifier l'aperçu et d'enregistrer le modèle du fournisseur.
+**🐞 Mode debug** (Paramètres ⚙️ → Général) : sous le PDF déposé, on voit les méthodes testées, les colonnes détectées, le rôle de chaque ligne (en-tête, article, suite, pied, ignorée) et pourquoi, le texte brut et les coordonnées des mots.
 
-Limites : les PDF scannés (images sans texte) demandent un OCR préalable. Les factures en grille tailles × quantités (une colonne par taille) ne sont pas encore lues.
+**Modèle fournisseur** : après chaque dépôt, un bandeau 🏷️ indique le modèle fournisseur utilisé (et le texte qui l'a fait reconnaître), ou qu'aucun modèle ne correspond. Juste dessous, **➕ Créer un modèle fournisseur à partir de ce PDF** (ou **✏️ Modifier le modèle**) permet de choisir la ligne d'en-tête, d'associer chaque information à une colonne, de vérifier l'aperçu, de choisir l'identifiant parmi les n° de TVA / domaines e-mail trouvés dans le PDF, puis d'enregistrer.
+
+Les factures **sans colonne Qté** dont les quantités sont dans une grille sous chaque article (`Taille: 5 5.5 6…` puis `Quantité: 2 2 1…`, ex. Encore) sont lues aussi : chaque quantité est associée à la taille au-dessus d'elle, une ligne par taille (les quantités 0 sont ignorées). Dans un modèle, la description peut réunir plusieurs colonnes : `Description = Produit + Couleur`.
+
+**Tailles US → FR** : les tailles étrangères sont converties en tailles françaises dans le CSV (Option « Taille »), à l'aide de tableaux de correspondance modifiables dans **Paramètres ⚙️ → Configuration application → Tailles (US → FR)** (`config/size_conversions.json`, onglet Sheets `size_conversions`). Chaque **type de produit** désigne son tableau (colonne « Tableau de tailles » : chaussures, pantalons W30 → 40, vêtements, casquettes 7 1/8 → 57…). Un **modèle fournisseur** indique le système de ses factures (`size_system` = US/UK, vide = déjà FR/EU) et un tableau par défaut (`size_chart`) quand le type n'est pas reconnu. À l'étape 2, « Tailles du document » permet de forcer le système. Une taille écrite « US 9 » est toujours convertie ; S, M, L… jamais. Une taille absente du tableau reste inchangée avec une alerte. Les barèmes fournis sont des valeurs courantes, à vérifier pour vos marques.
+
+Limite : les PDF scannés (images sans texte) demandent un OCR préalable.
 
 ## Formats de factures par fournisseur
 **Modèles par en-têtes** (recommandé) : pour chaque information (SKU / Référence, Description, Qté, PU HT (brut), PU Net, Total, Prix public TTC), on indique l'en-tête de colonne tel qu'il est écrit sur la facture, plus un *identifiant* facultatif. Dans Google Sheets, ils se trouvent dans l'onglet `supplier_formats`, colonnes `match` et `table`, p. ex. `SKU / Référence = Numéro d'Article ; Qté = Quantité Totale ; PU Net = Prix Net`.
 
 **Colonnes de fin de ligne** : un format décrit les colonnes chiffrées de la fin d'une ligne article, **de gauche à droite** (jusqu'à 5 : Qté, PU HT (brut), PU Net, Total, Prix public TTC ; la Qté est obligatoire).
 
-**🛠️ Gérer la configuration → Formats fournisseurs** : ajoutez une ligne par fournisseur (nom + *Colonne 1…5*), modifiez ou supprimez-en, puis **💾 Enregistrer**. Les formats enregistrés alimentent la liste **« Format fournisseur »** (conversion et rapprochement PO/BL) et la détection automatique. Les 4 formats fournis sont des exemples : renommez-les au nom de vos fournisseurs.
+**Paramètres ⚙️ → Configuration application → Modèles de facture** : ajoutez une ligne par fournisseur (nom + *Colonne 1…5*), modifiez ou supprimez-en, puis **💾 Enregistrer**. Les formats enregistrés alimentent la liste **« Format fournisseur »** (conversion et rapprochement PO/BL) et la détection automatique. Les 4 formats fournis sont des exemples : renommez-les au nom de vos fournisseurs.
 
 Dans Google Sheets : onglet `supplier_formats` (colonnes `name`, `columns`, `notes`) ; `columns` est une liste séparée par des virgules, p. ex. `Qté, PU Net, Total` (variantes acceptées : `qty`, `quantité`, `pu ht`, `prix public`…).
 
-## Gérer la configuration depuis l'interface
-Bouton **🛠️ Gérer la configuration** dans la barre latérale : consultation, ajout et suppression d'éléments (formats fournisseurs, marques, couleurs, types de produit, mapping Product Type, collections), validation avant sauvegarde, vue et export du JSON brut. Les fichiers `config/*.json` sont réécrits : pensez à les committer.
+## Paramètres ⚙️
+Bouton **Paramètres ⚙️** en haut à droite de l'accueil, au-dessus de l'aide ❓. Quatre onglets :
+- **⚙️ Général** : 🐞 mode debug, 💶 prix de vente de secours (coefficient, TVA), 🧩 template Shopify personnalisé. Ces réglages sont conservés pendant la session et s'appliquent à la fermeture de la fenêtre.
+- **📋 Diagnostic configuration** : la liste des points de configuration à compléter (Product Types manquants, collections vides, formats invalides, tableaux de tailles introuvables…). La barre latérale n'en affiche plus que le nombre.
+- **📚 Base de donnée Sheet** : état de la connexion Google Sheets (ouvrir, recharger, réessayer), diagnostic pas à pas et journal d'exécution.
+- **🧾 Configuration application** : consultation, ajout et suppression d'éléments (modèles de facture, marques, couleurs, types de produit, tailles, mapping Product Type, collections), validation avant sauvegarde, vue et export du JSON brut. Les fichiers `config/*.json` sont réécrits : pensez à les committer.
 
 ## Stocker la configuration dans Google Sheets (optionnel)
 
@@ -81,12 +91,12 @@ Par défaut la config vit dans `config/*.json`. Pour la partager en équipe et l
 | `collections_by_type` | `type_key`, `collection` | Type → collection |
 | `supplier_formats` | `name`, `columns`, `notes` (+ `match`, `table` pour les modèles par en-têtes, ajoutées automatiquement à l'enregistrement) | Formats de factures par fournisseur |
 
-Vous pouvez éditer **dans le Sheet** (nouvelles lignes, suppression, modification ; l'ordre des colonnes est libre, ne renommez pas les en-têtes) **ou dans l'app** (🛠️ Gérer la configuration). L'app relit le Sheet toutes les ~30 s, ou immédiatement via **🔄 Recharger**.
+Vous pouvez éditer **dans le Sheet** (nouvelles lignes, suppression, modification ; l'ordre des colonnes est libre, ne renommez pas les en-têtes) **ou dans l'app** (Paramètres ⚙️ → Configuration application). L'app relit le Sheet toutes les ~30 s, ou immédiatement via **🔄 Recharger**.
 `CONFIG_BACKEND=json` force le mode local. Si Google Sheets est configuré mais inaccessible, l'app affiche l'erreur et bascule sur les JSON locaux.
 
 ## Dépannage de la connexion Google Sheets
 
-Cliquez sur **🩺 Diagnostic & journal** (barre latérale) puis **▶️ Lancer le diagnostic** : l'application teste chaque maillon dans l'ordre et désigne **le premier blocage** avec une piste de résolution.
+Ouvrez **Paramètres ⚙️ → 📚 Base de donnée Sheet** puis **▶️ Lancer le diagnostic** : l'application teste chaque maillon dans l'ordre et désigne **le premier blocage** avec une piste de résolution.
 
 | Étape testée | Panne typique détectée |
 |---|---|

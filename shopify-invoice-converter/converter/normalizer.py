@@ -8,6 +8,7 @@ from typing import Optional
 
 from .config import TAG_NEW, WEIGHT_DECK_G, WEIGHT_NORMAL_G
 from .models import LineItem
+from .sizes import Charts, convert_size
 
 SIZE_SINGLE_RE = re.compile(r"^(\d)?(XXS|XS|XXL|XL|S|M|L)$", re.I)  # 2M, 3L, 4XL -> M, L, XL
 SIZE_COMPOUND_RE = re.compile(r"^(XS/S|S/M|M/L|L/XL|XL/XXL)$", re.I)  # conservés tels quels
@@ -89,7 +90,15 @@ def normalize_item(
     collections: dict,
     coef: float,
     tva_pct: float,
+    size_system: str = "",
+    size_chart: str = "",
+    charts: Optional[Charts] = None,
 ) -> Product:
+    """Ligne de facture -> variante Shopify.
+
+    `size_system` = système des tailles du document (« US », « UK » ; vide = déjà FR/EU) ; la taille est alors
+    convertie avec le tableau du type de produit (`size_chart` de la règle), à défaut `size_chart` (celui du modèle).
+    """
     warnings = list(item.warnings)
     brand, remaining = detect_brand(item.description, rules.get("brands", []))
     if not brand:
@@ -126,13 +135,21 @@ def normalize_item(
         else:
             warnings.append("Dureté / diamètre de roue non détectés")
     else:
-        numeric_ok = kind in rules.get("sized_numeric_kinds", [])
-        size_tok = _pop_token(
-            tokens,
-            lambda t: normalize_size(t) is not None or (numeric_ok and bool(NUMERIC_SIZE_RE.match(t))),
-        )
-        if size_tok:
-            opt.update(n1="Taille", v1=normalize_size(size_tok) or size_tok)
+        if item.size:  # taille donnée par la facture (colonne « Taille / Quantité ») : pas de devinette
+            opt.update(n1="Taille", v1=item.size)
+        else:
+            numeric_ok = kind in rules.get("sized_numeric_kinds", [])
+            size_tok = _pop_token(
+                tokens,
+                lambda t: normalize_size(t) is not None or (numeric_ok and bool(NUMERIC_SIZE_RE.match(t))),
+            )
+            if size_tok:
+                opt.update(n1="Taille", v1=normalize_size(size_tok) or size_tok)
+        if opt["v1"]:  # taille étrangère (US…) -> équivalent français
+            chart = (rule or {}).get("size_chart") or size_chart
+            opt["v1"], problem = convert_size(opt["v1"], size_system, chart, charts or {})
+            if problem:
+                warnings.append(problem)
         color_tok = _pop_token(tokens, lambda t: t.lower() in {c.lower() for c in rules.get("colors", [])})
         if color_tok:
             tail_parts.append(color_tok.capitalize())

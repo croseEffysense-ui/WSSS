@@ -1,4 +1,4 @@
-"""Fenêtre Streamlit : diagnostic de connexion + journal d'exécution."""
+"""Diagnostic de connexion + journal d'exécution (affichés dans Paramètres ⚙️ → Base de donnée Sheet)."""
 from __future__ import annotations
 
 from typing import Mapping, Optional
@@ -9,9 +9,9 @@ from .diagnostics import ICONS, report_text, run_diagnostics
 from .logs import LEVELS, LOG_FILE, clear_entries, entries_text, get_entries
 
 
-@st.dialog("🩺 Diagnostic & journal", width="large")
-def diagnostic_dialog(secrets: Mapping, env: Mapping[str, str], secrets_error: Optional[str]) -> None:
-    tab_diag, tab_log = st.tabs(["Diagnostic pas à pas", "Journal d'exécution"])
+def render_diagnostics(secrets: Mapping, env: Mapping[str, str], secrets_error: Optional[str]) -> None:
+    """Onglets « Diagnostic pas à pas » et « Journal d'exécution » (à placer dans une page ou une fenêtre)."""
+    tab_diag, tab_log = st.tabs(["🩺 Diagnostic pas à pas", "📜 Journal d'exécution"])
 
     with tab_diag:
         st.caption(

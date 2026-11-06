@@ -124,7 +124,7 @@ def analyze(
         else:
             a.error = (
                 "Aucun article détecté : ni tableau avec en-têtes (Référence, Quantité…) reconnu, ni référence de la "
-                "forme AAA-BBB-1234. Activez 🐞 Mode debug (barre latérale) pour voir ce que contient le PDF et "
+                "forme AAA-BBB-1234. Activez 🐞 Mode debug (Paramètres ⚙️ → Général) pour voir ce que contient le PDF et "
                 "enregistrer un modèle pour ce fournisseur."
             )
         return a

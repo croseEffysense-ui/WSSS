@@ -413,3 +413,1386 @@ Heure locale UTC : 2026-10-29 13:38:49
 14:38:49 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
 14:38:49 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
 14:38:49 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1}
+15:54:43 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+15:54:43 | INFO    | converter.app | Secrets Streamlit lus : sections []
+15:54:43 | INFO    | converter.storage | Choix du backend de config · forcé local=False · compte de service=absent · sheet=absent
+15:54:43 | INFO    | converter.storage | Google Sheets non configuré (ni secrets ni variables d'environnement) : mode fichiers JSON locaux
+15:54:43 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+16:02:30 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:02:31 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:02:31
+16:02:31 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:02:31 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:02:31 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:02:31 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:02:31 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:02:31
+16:02:31 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:02:31 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:02:31 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:02:31 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:02:31 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:02:31
+16:02:31 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:02:31 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:02:31 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:02:31 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:02:31 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-5\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-10-29 15:02:31
+16:02:31 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-5\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:02:31 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:02:31 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:02:31 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:02:31 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:02:31 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:02:31 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats'] → création et pré-remplissage depuis la config locale
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (12 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (12 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (5 ligne(s))
+16:02:31 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 5}
+16:02:31 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (6 ligne(s))
+16:02:31 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:02:31 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:02:31 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1}
+16:02:31 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-5\test_local_save_formats_roundt0\supplier_formats.json
+16:02:31 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:02:31 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats'] → création et pré-remplissage depuis la config locale
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (12 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (12 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:02:31 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (5 ligne(s))
+16:02:31 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 5}
+16:02:31 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:02:31 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:02:31 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1}
+16:03:48 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:03:48 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:03:48 | INFO    | converter.storage | Choix du backend de config · forcé local=False · compte de service=absent · sheet=absent
+16:03:48 | INFO    | converter.storage | Google Sheets non configuré (ni secrets ni variables d'environnement) : mode fichiers JSON locaux
+16:03:48 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+16:09:47 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\config\supplier_formats.json
+16:10:15 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\config\supplier_formats.json
+16:24:50 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:24:51 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:24:51
+16:24:51 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:24:51 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:24:51 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:24:51 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:24:51 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:24:51
+16:24:51 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:24:51 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:24:51 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:24:51 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:24:51 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:24:51
+16:24:51 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:24:51 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:24:51 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:24:51 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:24:51 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-6\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-10-29 15:24:51
+16:24:51 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-6\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:24:51 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:24:51 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:24:51 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:24:51 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:24:51 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:24:51 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats'] → création et pré-remplissage depuis la config locale
+16:24:51 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:24:51 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:24:51 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (12 ligne(s))
+16:24:51 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:24:51 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (12 ligne(s))
+16:24:51 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:24:51 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:24:51 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:24:51 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2}
+16:24:51 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:24:51 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:24:51 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:24:51 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1}
+16:24:51 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-6\test_local_save_formats_roundt0\supplier_formats.json
+16:24:52 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:24:52 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats'] → création et pré-remplissage depuis la config locale
+16:24:52 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:24:52 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:24:52 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (12 ligne(s))
+16:24:52 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:24:52 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (12 ligne(s))
+16:24:52 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:24:52 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:24:52 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:24:52 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2}
+16:24:52 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:24:52 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:24:52 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1}
+16:25:27 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:25:27 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:25:27
+16:25:27 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:25:27 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:25:27 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:25:27 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:25:27 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:25:27
+16:25:27 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:25:27 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:25:27 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:25:27 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:25:27 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:25:27
+16:25:27 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:25:27 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:25:27 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:25:27 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:25:27 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-7\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-10-29 15:25:27
+16:25:27 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-7\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:25:27 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:25:27 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:25:27 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:25:27 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:25:27 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:25:27 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats'] → création et pré-remplissage depuis la config locale
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (12 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (12 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:25:27 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2}
+16:25:27 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:25:27 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:25:27 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:25:27 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1}
+16:25:27 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-7\test_local_save_formats_roundt0\supplier_formats.json
+16:25:27 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:25:27 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats'] → création et pré-remplissage depuis la config locale
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (12 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (12 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:25:27 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:25:27 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2}
+16:25:27 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:25:27 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:25:27 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 12, 'settings': 1, 'type_mapping': 12, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1}
+16:28:00 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:28:00 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:28:00 | INFO    | converter.storage | Choix du backend de config · forcé local=False · compte de service=absent · sheet=absent
+16:28:00 | INFO    | converter.storage | Google Sheets non configuré (ni secrets ni variables d'environnement) : mode fichiers JSON locaux
+16:28:00 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+16:37:45 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:37:46 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:37:46
+16:37:46 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:37:46 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:37:46 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:37:46 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:37:46 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:37:46
+16:37:46 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:37:46 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:37:46 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:37:46 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:37:46 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:37:46
+16:37:46 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:37:46 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:37:46 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:37:46 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:37:46 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-8\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-10-29 15:37:46
+16:37:46 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-8\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:37:46 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:37:46 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:37:46 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:37:46 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:37:46 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:37:46 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:37:46 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:37:46 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:37:46 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:37:46 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:37:46 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:37:46 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-8\test_local_save_formats_roundt0\supplier_formats.json
+16:37:46 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:37:46 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:37:46 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:37:46 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:37:46 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:37:46 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 1, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:37:46 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:37:46 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:37:46 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:37:46 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:37:46 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:37:46 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:37:46 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:46:13 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:46:13 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:46:13 | INFO    | converter.storage | Choix du backend de config · forcé local=False · compte de service=absent · sheet=absent
+16:46:13 | INFO    | converter.storage | Google Sheets non configuré (ni secrets ni variables d'environnement) : mode fichiers JSON locaux
+16:46:13 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+16:52:31 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:52:31 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:52:31
+16:52:31 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:52:31 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:52:31 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:52:31 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:52:31 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:52:31
+16:52:31 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:52:31 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:52:31 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:52:31 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:52:31 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:52:31
+16:52:31 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:52:31 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:52:31 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:52:31 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:52:31 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-9\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-10-29 15:52:31
+16:52:31 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-9\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:52:31 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:52:31 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:52:31 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:52:31 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:52:31 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:52:31 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:52:31 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:52:31 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:52:31 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:52:31 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:52:31 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:52:31 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-9\test_local_save_formats_roundt0\supplier_formats.json
+16:52:31 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:52:31 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:52:31 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:52:31 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:52:31 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:52:31 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:52:31 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 1, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:52:32 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:52:32 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:52:32 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:52:32 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:52:32 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:52:32 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:52:32 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:52:32 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:52:32 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:52:32 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:52:32 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:52:32 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:52:32 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:52:32 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:52:32 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:55:18 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:55:18 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:55:18 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:55:18
+16:55:18 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:55:18 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:55:18 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:55:18 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:55:18 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:55:18 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:55:19 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:55:19
+16:55:19 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:55:19 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:55:19 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:55:19 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:55:19 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:55:19 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:55:19 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:55:19 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:55:19 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:55:19 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-10-29 15:55:19
+16:55:19 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:55:19 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:55:19 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:55:19 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:55:19 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:55:19 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:55:19 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.0 · streamlit 1.66.1 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-10\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-10-29 15:55:19
+16:55:19 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-10\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:55:19 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:55:19 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:55:19 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:55:19 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:55:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:55:19 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:55:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:55:19 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:55:19 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:55:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:55:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:55:19 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-10\test_local_save_formats_roundt0\supplier_formats.json
+16:55:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:55:19 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:55:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:55:19 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:55:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:55:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 1, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:55:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:55:19 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:55:19 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:55:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:55:19 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:55:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:55:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:58:40 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:58:40 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:58:40 | INFO    | converter.storage | Choix du backend de config · forcé local=False · compte de service=absent · sheet=absent
+16:58:40 | INFO    | converter.storage | Google Sheets non configuré (ni secrets ni variables d'environnement) : mode fichiers JSON locaux
+16:58:40 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+15:57:07 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+15:57:08 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 14:57:08
+15:57:08 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+15:57:08 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+15:57:08 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+15:57:08 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+15:57:08 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 14:57:08
+15:57:08 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+15:57:08 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+15:57:08 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+15:57:08 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+15:57:08 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 14:57:08
+15:57:08 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+15:57:08 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+15:57:08 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+15:57:08 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+15:57:08 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-11\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-11-06 14:57:08
+15:57:08 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-11\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+15:57:08 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+15:57:08 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+15:57:08 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+15:57:08 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+15:57:08 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+15:57:08 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+15:57:08 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+15:57:08 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+15:57:08 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+15:57:08 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+15:57:08 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+15:57:08 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-11\test_local_save_formats_roundt0\supplier_formats.json
+15:57:08 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+15:57:08 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+15:57:08 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+15:57:08 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+15:57:08 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+15:57:08 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 1, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+15:57:08 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+15:57:08 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+15:57:08 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+15:57:08 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+15:57:08 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+15:57:08 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+15:57:08 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+15:57:17 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+15:57:17 | INFO    | converter.app | Secrets Streamlit lus : sections []
+15:57:17 | INFO    | converter.storage | Choix du backend de config · forcé local=True · compte de service=absent · sheet=absent
+15:57:17 | INFO    | converter.storage | CONFIG_BACKEND=json : fichiers JSON locaux
+15:57:17 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+15:57:40 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+15:57:40 | INFO    | converter.app | Secrets Streamlit lus : sections []
+15:57:48 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+15:57:48 | INFO    | converter.app | Secrets Streamlit lus : sections []
+15:58:01 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+15:58:01 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:05:05 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:05:05 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:05:05 | INFO    | converter.storage | Choix du backend de config · forcé local=False · compte de service=absent · sheet=absent
+16:05:05 | INFO    | converter.storage | Google Sheets non configuré (ni secrets ni variables d'environnement) : mode fichiers JSON locaux
+16:05:05 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+16:07:58 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:07:58 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:10:09 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:10:09 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:10:13 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:10:13 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:12:18 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:12:19 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:12:19
+16:12:19 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:12:19 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:12:19 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:12:19 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:12:19 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:12:19
+16:12:19 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:12:19 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:12:19 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:12:19 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:12:19 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:12:19
+16:12:19 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:12:19 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:12:19 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:12:19 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:12:19 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-12\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-11-06 15:12:19
+16:12:19 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-12\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:12:19 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:12:19 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:12:19 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:12:19 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:12:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:12:19 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:12:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:12:19 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:12:19 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:12:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:12:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:12:19 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-12\test_local_save_formats_roundt0\supplier_formats.json
+16:12:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:12:19 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:12:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:12:19 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:12:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:12:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 1, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:12:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:12:19 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:12:19 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:12:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:12:19 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:12:19 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:12:19 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:12:33 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:12:33 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:12:33 | INFO    | converter.storage | Choix du backend de config · forcé local=True · compte de service=absent · sheet=absent
+16:12:33 | INFO    | converter.storage | CONFIG_BACKEND=json : fichiers JSON locaux
+16:12:33 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+16:13:23 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:13:23 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:13:43 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:13:43 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:13:43
+16:13:43 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:13:43 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:13:43 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:13:43 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:13:43 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:13:43
+16:13:43 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:13:43 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:13:43 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:13:43 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:13:43 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:13:43
+16:13:43 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:13:43 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:13:43 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:13:43 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:13:43 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-13\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-11-06 15:13:43
+16:13:43 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-13\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:13:43 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:13:43 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:13:43 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:13:43 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:13:44 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:13:44 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:13:44 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:13:44 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:13:44 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:13:44 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:13:44 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:13:44 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-13\test_local_save_formats_roundt0\supplier_formats.json
+16:13:44 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:13:44 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:13:44 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:13:44 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:13:44 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:13:44 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 1, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:13:44 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:13:44 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:13:44 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:13:44 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:13:44 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:13:44 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:13:44 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:14:48 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:14:48 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:15:41 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:15:41 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:19:47 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:19:47 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:19:53 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:19:53 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:23:31 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:23:32 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:23:32
+16:23:32 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:23:32 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:23:32 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:23:32 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:23:32 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:23:32
+16:23:32 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:23:32 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:23:32 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:23:32 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:23:32 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:23:32
+16:23:32 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:23:32 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:23:32 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:23:32 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:23:32 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-14\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-11-06 15:23:32
+16:23:32 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-14\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:23:32 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:23:32 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:23:32 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:23:32 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:23:32 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:23:32 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:23:32 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:23:32 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:23:32 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:23:32 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:23:32 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:23:32 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-14\test_local_save_formats_roundt0\supplier_formats.json
+16:23:32 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:23:32 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:23:32 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:23:32 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:23:32 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:23:32 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 1, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:23:32 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:23:32 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:23:32 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:23:32 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:23:32 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:23:32 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:23:32 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:26:10 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:26:10 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:26:10
+16:26:10 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:26:10 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:26:10 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:26:10 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:26:10 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:26:10
+16:26:10 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:26:10 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:26:10 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:26:10 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:26:10 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:26:10
+16:26:10 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:26:10 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:26:10 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:26:10 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:26:10 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-15\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-11-06 15:26:10
+16:26:10 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-15\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:26:10 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:26:10 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:26:10 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:26:10 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:26:10 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:26:10 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:26:10 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:26:10 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:26:10 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:26:10 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:26:10 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:26:10 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:26:10 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:26:10 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:26:10 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:26:10 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:26:10 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:26:10 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:26:10 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:26:10 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:26:11 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-15\test_local_save_formats_roundt0\supplier_formats.json
+16:26:11 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:26:11 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:26:11 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:26:11 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:26:11 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:26:11 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 1, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:26:11 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:26:11 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:26:11 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:26:11 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:26:11 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:26:11 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:26:11 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:27:24 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:27:24 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:27:33 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:27:33 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:27:46 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:27:46 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:27:46 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\config\product_rules.json
+16:27:46 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:27:46 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:28:36 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:28:36 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:31:50 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:31:50 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:45:44 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:45:45 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:45:45
+16:45:45 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:45:45 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:45:45 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:45:45 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:45:45 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:45:45
+16:45:45 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:45:45 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:45:45 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:45:45 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:45:45 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:45:45
+16:45:45 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:45:45 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:45:45 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:45:45 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:45:45 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-16\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-11-06 15:45:45
+16:45:45 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-16\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:45:45 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:45:45 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:45:45 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:45:45 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:45:45 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:45:45 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:45:45 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:45:45 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:45:45 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:45:45 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:45:45 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:45:45 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-16\test_local_save_formats_roundt0\supplier_formats.json
+16:45:45 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:45:45 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:45:45 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:45:45 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:45:45 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:45:45 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 1, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:45:45 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:45:45 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:45:45 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:45:45 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:45:45 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:45:45 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:45:45 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:46:05 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:46:05 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:46:05 | INFO    | converter.storage | Choix du backend de config · forcé local=True · compte de service=absent · sheet=absent
+16:46:05 | INFO    | converter.storage | CONFIG_BACKEND=json : fichiers JSON locaux
+16:46:05 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+16:46:16 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:46:16 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:47:32 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:47:32 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:50:51 | INFO    | converter.test | Authorization: [MASQUÉ] MASQUÉ]
+16:50:51 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:50:51 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:50:51
+16:50:51 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:50:51 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:50:51 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:50:51 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:50:51 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 1 erreur(s) · premier blocage : Choix du backend =====
+16:50:51 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:50:51 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:50:51
+16:50:51 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:50:51 | INFO    | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → ok · Sections lues : [gcp_service_account] → ['client_email', 'private_key', 'project_id', 'token_uri', 'type']; [config_sheet] → ['spreadsheet']
+16:50:51 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:50:51 | INFO    | converter.diagnostics | [diagnostic] Choix du backend → ok · Compte de service : secrets Streamlit [gcp_service_account] · Sheet : secrets Streamlit [config_sheet] spreadsheet
+16:50:51 | ERROR   | converter.diagnostics | [diagnostic] Compte de service : champs → error · client_email = bot@p.iam.gserviceaccount.com · project_id = p · type = service_account
+clé privée : {'longueur': 11, 'commence_par_BEGIN_PRIVATE_KEY': False, 'finit_par_END_PRIVATE_KEY': False, 'retours_ligne_reels': 0, 'sequences_backslash_n_litterales': 0}
+• private_key ne commence pas par -----BEGIN PRIVATE KEY-----
+• private_key ne contient aucun retour à la ligne
+16:50:52 | ERROR   | converter.diagnostics | [diagnostic] Réseau vers Google → error · ConnectionError: Name or service not known  →  Problème réseau : pas d'accès à *.googleapis.com (pare-feu, proxy, VPN, DNS). Testez depuis cette machine : https://sheets.googleapis.com
+16:50:52 | INFO    | converter.diagnostics | [diagnostic] Horloge système → skip · En-tête Date indisponible.
+16:50:52 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Compte de service : champs =====
+16:50:52 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:50:52 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter
+Heure locale UTC : 2026-11-06 15:50:52
+16:50:52 | WARNING | converter.diagnostics | [diagnostic] Fichiers secrets.toml → warn · ✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:50:52 | ERROR   | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → error · Les secrets n'ont pas pu être lus : TomlDecodeError: Invalid value (at line 4)
+16:50:52 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:50:52 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:50:52 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Lecture des secrets Streamlit =====
+16:50:52 | INFO    | converter.diagnostics | ===== Début du diagnostic Google Sheets =====
+16:50:52 | INFO    | converter.diagnostics | [diagnostic] Environnement → info · Python 3.14.3 · Windows · gspread 6.2.1 · google-auth 2.62.1 · streamlit 1.67.0 · requests 2.34.2
+Dossier courant : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-17\test_broken_secrets_toml_is_de0
+Heure locale UTC : 2026-11-06 15:50:52
+16:50:52 | ERROR   | converter.diagnostics | [diagnostic] Fichiers secrets.toml → error · ✔ trouvé (58 octets) · TOML INVALIDE → TOMLDecodeError: Illegal character '\n' (at line 2, column 41)  C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-17\test_broken_secrets_toml_is_de0\.streamlit\secrets.toml
+✘ absent  C:\Users\rozec\Desktop\WS\dev\shopify-invoice-converter\.streamlit\secrets.toml
+     contenu du dossier : ['secrets.toml.example']
+✘ absent  C:\Users\rozec\.streamlit\secrets.toml
+     contenu du dossier : ['credentials.toml', 'machine_id_v4']
+16:50:52 | WARNING | converter.diagnostics | [diagnostic] Lecture des secrets Streamlit → warn · Aucune section trouvée parmi [gcp_service_account] / [config_sheet].
+16:50:52 | INFO    | converter.diagnostics | [diagnostic] Variables d'environnement → info · Définies : aucune · Proxy détecté : aucun
+16:50:52 | ERROR   | converter.diagnostics | [diagnostic] Choix du backend → error · Google Sheets n'est pas configuré : ni compte de service, ni ID de Sheet trouvés (secrets ou variables).
+16:50:52 | INFO    | converter.diagnostics | ===== Fin du diagnostic : 2 erreur(s) · premier blocage : Fichiers secrets.toml =====
+16:50:52 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:50:52 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:50:52 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:50:52 | INFO    | converter.storage | Enregistrement de l'onglet « supplier_formats » (3 ligne(s))
+16:50:52 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:50:52 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:50:52 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:50:52 | INFO    | converter.storage | Config locale enregistrée : C:\Users\rozec\AppData\Local\Temp\pytest-of-rozec\pytest-17\test_local_save_formats_roundt0\supplier_formats.json
+16:50:52 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:50:52 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:50:52 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:50:52 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:50:52 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:50:52 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 1, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:50:52 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:50:52 | WARNING | converter.storage | Onglets absents ou vides : ['brands', 'colors', 'product_types', 'settings', 'type_mapping', 'collections_allowed', 'collections_by_type', 'supplier_formats', 'size_conversions'] → création et pré-remplissage depuis la config locale
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « brands » (19 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « colors » (27 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « product_types » (13 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « settings » (1 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « type_mapping » (13 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « collections_allowed » (0 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « collections_by_type » (0 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « supplier_formats » (2 ligne(s))
+16:50:52 | INFO    | converter.storage | Initialisation de l'onglet « size_conversions » (70 ligne(s))
+16:50:52 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 2, 'size_conversions': 70}
+16:50:52 | INFO    | converter.storage | Cache de configuration vidé (rechargement demandé)
+16:50:52 | INFO    | converter.storage | Lecture de la config depuis Google Sheets (cache vide ou expiré)…
+16:50:52 | INFO    | converter.storage | Config chargée : {'brands': 19, 'colors': 27, 'product_types': 13, 'settings': 1, 'type_mapping': 13, 'collections_allowed': 0, 'collections_by_type': 0, 'supplier_formats': 1, 'size_conversions': 70}
+16:51:12 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:51:12 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:51:12 | INFO    | converter.storage | Choix du backend de config · forcé local=True · compte de service=absent · sheet=absent
+16:51:12 | INFO    | converter.storage | CONFIG_BACKEND=json : fichiers JSON locaux
+16:51:12 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+16:51:22 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:51:22 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:52:20 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:52:20 | INFO    | converter.app | Secrets Streamlit lus : sections []

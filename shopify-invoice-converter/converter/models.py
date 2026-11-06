@@ -19,12 +19,14 @@ class LineItem:
     total: Optional[float] = None
     public_price: Optional[float] = None  # Prix public TTC
     barcode: str = ""  # Gencod / EAN (toujours conservé en texte)
+    size: str = ""  # taille explicite (colonne « Taille / Quantité ») : prioritaire sur la taille lue dans la désignation
     warnings: list[str] = field(default_factory=list)
 
 
 EDITOR_COLUMNS = {
     "sku": "SKU",
     "description": "Description",
+    "size": "Taille",
     "qty": "Qté",
     "unit_price_gross": "PU HT (brut)",
     "unit_price_net": "PU Net",
@@ -69,6 +71,7 @@ def df_to_items(df: pd.DataFrame) -> list[LineItem]:
                 total=_clean(r.get("Total"), float),
                 public_price=_clean(r.get("Prix public TTC"), float),
                 barcode=str(_clean(r.get("Barcode"), str, "")).strip(),
+                size=str(_clean(r.get("Taille"), str, "")).strip(),
                 warnings=[w for w in str(_clean(r.get("Alertes"), str, "")).split(" | ") if w],
             )
         )

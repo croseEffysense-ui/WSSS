@@ -26,8 +26,10 @@ ADIDAS = [
     L(1, 164, ("d'Article", 59), ("Totale", 297), ("Catalogue", 476), ("Totale %", 529)),
     L(1, 181, ("Commande client : 1006301752", 20)),
     L(1, 196, ("1", 33), ("LC1068", 62), ("STAN SMITH ADV X VINCENT MILOU FTWW", 103), ("7", 306), ("3913 / 1", 334),
-      ("40 / 1", 364), ("50,05", 493), ("8,00", 553), ("46,05", 594), ("322,34", 655), ("64,47", 730), ("350,35", 805)),
-    L(1, 215, ("7", 306), ("Sous-total avant remise", 680), ("350,35", 805)),
+      ("40 / 1", 380), ("4113 / 1", 412), ("42 / 2", 452), ("50,05", 493), ("8,00", 553), ("46,05", 594),
+      ("322,34", 655), ("64,47", 730), ("350,35", 805)),
+    L(1, 205, ("4223 / 1", 386), ("4423 / 1", 430)),  # la répartition par taille continue sur la ligne suivante
+    L(1, 225, ("7", 306), ("Sous-total avant remise", 680), ("350,35", 805)),
 ]
 
 
@@ -43,12 +45,62 @@ def test_eleven_columns_multiline_header_auto():
     fields = {c.label: c.field for c in trace.columns}
     assert fields["Numéro d'Article"] == "sku" and fields["Quantité Totale"] == "qty" and fields["Prix Catalogue"] == "unit_price_gross"
     assert fields["Prix Net"] == "unit_price_net" and fields["Montant Net"] == "total" and fields["Montant Total"] is None
-    assert len(items) == 1
-    it = items[0]
-    assert (it.sku, it.qty, it.unit_price_gross, it.unit_price_net, it.total) == ("LC1068", 7, 50.05, 46.05, 322.34)
-    assert it.description == "STAN SMITH ADV X VINCENT MILOU FTWW" and not it.warnings
+    assert fields["Taille / Quantité"] == "sizes"
+    # une ligne par taille : « 3913 / 1 » = pointure 39 1/3, 1 paire ; la ligne de suite « 4223 / 1 4423 / 1 » est lue aussi
+    assert [(i.sku, i.size, i.qty) for i in items] == [
+        ("LC1068-3913", "39 1/3", 1), ("LC1068-40", "40", 1), ("LC1068-4113", "41 1/3", 1),
+        ("LC1068-42", "42", 2), ("LC1068-4223", "42 2/3", 1), ("LC1068-4423", "44 2/3", 1),
+    ]
+    assert sum(i.qty for i in items) == 7 and all(i.unit_price_gross == 50.05 and i.unit_price_net == 46.05 for i in items)
+    assert items[3].total == 92.1 and all(i.description == "STAN SMITH ADV X VINCENT MILOU FTWW" and not i.warnings for i in items)
     roles = {lt.text.split()[0]: lt.role for lt in trace.lines}
-    assert roles["Commande"] == "ignorée" and roles["7"] == "pied de tableau"
+    assert roles["Commande"] == "ignorée" and roles["7"] == "pied de tableau" and roles["4223"] == "suite d'article"
+    assert trace.cells[0]["→ Tailles lues"].startswith("39 1/3 ×1, 40 ×1")
+
+
+def test_size_breakdown_mismatch_warns_and_single_size_column():
+    from converter.table_parser import decode_size
+    assert decode_size("3913") == "39 1/3" and decode_size("4223") == "42 2/3" and decode_size("42") == "42" and decode_size("M") == "M"
+    header = L(1, 10, ("Ref", 20), ("Designation", 100), ("Qte", 250), ("Taille / Qte", 300), ("Prix", 420))
+    items, _ = parse_pages([[header, L(1, 30, ("AB123", 20), ("Tee", 100), ("5", 255), ("S / 1 M / 2", 300), ("9,00", 420))]])
+    assert [(i.sku, i.size, i.qty) for i in items] == [("AB123-S", "S", 1), ("AB123-M", "M", 2)]
+    assert all("Somme des tailles (3) ≠ Qté totale (5)" in i.warnings for i in items)
+    header = L(1, 10, ("Ref", 20), ("Designation", 100), ("Taille", 250), ("Qte", 320), ("Prix", 420))
+    items, _ = parse_pages([[header, L(1, 30, ("AB123", 20), ("Tee", 100), ("XL", 255), ("2", 325), ("9,00", 420))]])
+    assert (items[0].sku, items[0].size, items[0].qty, items[0].description) == ("AB123", "XL", 2, "Tee")
+
+
+def test_size_grid_without_quantity_column_and_multi_column_description():
+    from converter.formats import validate_table
+    # façon Encore : pas de colonne Qté ; grille « Taille: » / « Quantité: » sous chaque article
+    page = [
+        L(1, 290, ("Produit", 68), ("Couleur", 180), ("Style-Code", 314), ("Prix HA ht", 436), ("PPC ttc", 514)),
+        L(1, 320, ("Comanche-326", 57), ("BLACK REFLECTIVE CHARCOAL NBCK", 122), ("DVF0000029985-985", 277),
+          ("45.00 €", 447), ("100.00 €", 516)),
+        L(1, 331, ("Produits: 3", 31), ("Taille:", 137), ("5", 193), ("5.5", 213), ("6", 239)),
+        L(1, 342, ("Total ht ligne: 135€", 31), ("Quantité:", 131), ("2", 193), ("0", 216), ("1", 239)),
+        L(1, 400, ("Total HT : 135.00 €", 442)),
+    ]
+    items, trace = parse_pages([page])
+    assert [(i.sku, i.size, i.qty, i.unit_price_net, i.public_price, i.total) for i in items] == [
+        ("DVF0000029985-985-5", "5", 2, 45.0, 100.0, 90.0), ("DVF0000029985-985-6", "6", 1, 45.0, 100.0, 45.0),
+    ]  # quantité 0 (taille 5.5) ignorée
+    assert items[0].description == "Comanche-326 BLACK REFLECTIVE" and not items[0].warnings  # sans modèle : couleur tronquée
+    assert [lt.role for lt in trace.lines][2:5] == ["suite d'article", "suite d'article", "pied de tableau"]
+    mapping = {"sku": "Style-Code", "description": "Produit + Couleur", "unit_price_gross": "Prix HA ht", "public_price": "PPC ttc"}
+    assert validate_table("Encore", mapping) == []
+    items, _ = parse_pages([page], mapping)
+    assert items[0].description == "Comanche-326 BLACK REFLECTIVE CHARCOAL NBCK"
+
+
+def test_explicit_size_becomes_shopify_option_and_survives_editor():
+    from test_pipeline import COLL, MAPPING, RULES
+    from converter.models import LineItem, df_to_items, items_to_df
+    from converter.normalizer import normalize_item
+    item = LineItem(sku="LC1068-3913", description="Stan Smith Black", qty=1, unit_price_net=46.05, size="39 1/3")
+    assert df_to_items(items_to_df([item]))[0].size == "39 1/3"
+    p = normalize_item(item, RULES, MAPPING, COLL, 2.4, 20)
+    assert (p.option1_name, p.option1_value) == ("Taille", "39 1/3")
 
 
 def test_template_mapping_exact_label_beats_partial():
@@ -131,16 +183,18 @@ def test_formats_from_doc_splits_kinds_and_upsert():
         {"name": "Cassé", "table": {"sku": "Article"}},
     ]}
     profiles, templates, problems = formats_from_doc(doc)
-    assert profiles == {"Simple": ["qty", "total"]} and templates == {"Adidas": {"table": {"sku": "Article", "qty": "Quantité"}, "match": "adidas"}}
+    assert profiles == {"Simple": ["qty", "total"]}
+    assert templates == {"Adidas": {"table": {"sku": "Article", "qty": "Quantité"}, "match": "adidas", "size_system": "", "size_chart": ""}}
     assert len(problems) == 1 and "Cassé" in problems[0]
     new = upsert_template(doc, "adidas", {"sku": "Réf", "qty": "Qté"}, "adidas France")
     assert [f["name"] for f in new["formats"]] == ["Simple", "Cassé", "adidas"] and new["formats"][-1]["match"] == "adidas France"
 
 
-def test_shipped_adidas_template_is_valid():
+def test_shipped_adidas_and_encore_templates_are_valid():
     from converter.config import load_formats
-    profiles, templates, problems = load_formats()
-    assert "Adidas" in templates and not problems and len(profiles) == 4
+    _, templates, problems = load_formats()
+    assert {"Adidas", "Encore"} <= set(templates) and not problems
+    assert templates["Encore"]["table"]["description"] == "Produit + Couleur" and "qty" not in templates["Encore"]["table"]
 
 
 def test_sheets_template_row_and_old_three_column_sheet():
@@ -150,7 +204,9 @@ def test_sheets_template_row_and_old_three_column_sheet():
     store = SheetsStore(gw, seed=_local())
     doc = store.load("supplier_formats.json")
     assert next(f for f in doc["formats"] if f["name"] == "Adidas")["table"]["qty"] == "Quantité Totale"
-    assert gw.sheets["supplier_formats"][0] == ["name", "columns", "notes", "match", "table"]
+    assert gw.sheets["supplier_formats"][0] == ["name", "columns", "notes", "match", "table", "size_system", "size_chart"]
+    encore = next(f for f in doc["formats"] if f["name"] == "Encore")
+    assert (encore["size_system"], encore["size_chart"]) == ("US", "Chaussures")
     gw.sheets["supplier_formats"] = [["name", "columns", "notes"], ["Vans", "Qté, Total", ""]]  # Sheet créé avant la mise à jour
     store.refresh()
     assert store.load("supplier_formats.json") == {"formats": [{"name": "Vans", "columns": ["qty", "total"], "notes": ""}]}
@@ -180,17 +236,33 @@ def fake_pdf(monkeypatch):
 
 
 def test_analyze_prefers_recognised_supplier_template(fake_pdf):
+    from test_pipeline import PROFILES
     from converter.config import load_formats
-    profiles, templates, _ = load_formats()
-    a = fake_pdf.analyze(b"%PDF", fake_pdf.AUTO, profiles, templates)
+    _, templates, _ = load_formats()
+    a = fake_pdf.analyze(b"%PDF", fake_pdf.AUTO, PROFILES, templates)
     assert not a.error and a.chosen.name == "Adidas" and a.chosen.supplier_match
-    assert a.items[0].sku == "LC1068" and "Qté = « Quantité Totale »" in a.chosen.describe()
+    assert a.items[0].sku == "LC1068-3913" and "Qté = « Quantité Totale »" in a.chosen.describe()
+    assert "Tailles / Quantités = « Taille / Quantité »" in a.chosen.describe()
     assert {c.method for c in a.candidates} == {fake_pdf.METHOD_TEMPLATE, fake_pdf.METHOD_AUTO_TABLE, fake_pdf.METHOD_TAIL}
+
+
+def test_supplier_banner_says_which_template_was_used(fake_pdf):
+    from converter.debug_ui import identifier_suggestions, supplier_status
+    templates = {"Adidas": {"table": {"sku": "Numéro d'Article", "qty": "Quantité Totale"}, "match": "adidas France"}}
+    level, msg, tpl = supplier_status(fake_pdf.analyze(b"%PDF", fake_pdf.AUTO, {}, templates), templates)
+    assert level == "success" and "**Adidas**" in msg and "adidas France" in msg and tpl is templates["Adidas"]
+    other = {"Vans": {"table": {"sku": "Numéro d'Article", "qty": "Quantité Totale"}, "match": "VF FRANCE"}}
+    level, msg, tpl = supplier_status(fake_pdf.analyze(b"%PDF", "Vans", {}, other), other)
+    assert level == "info" and "absent de ce PDF" in msg  # modèle choisi à la main
+    level, msg, tpl = supplier_status(fake_pdf.analyze(b"%PDF", fake_pdf.AUTO, {}, {}), {})
+    assert level == "warning" and "Aucun modèle fournisseur" in msg and tpl is None
+    text = "TVA: FR21524038817 Email: commercial@agencencore.com N°de TVA: FR71419568217 Facture FACTURE"
+    assert identifier_suggestions(text) == ["FR21524038817", "FR71419568217", "agencencore.com"]
 
 
 def test_analyze_auto_table_without_any_saved_format(fake_pdf):
     a = fake_pdf.analyze(b"%PDF", fake_pdf.AUTO, {}, {})
-    assert a.chosen.name == fake_pdf.AUTO_TABLE and len(a.items) == 1
+    assert a.chosen.name == fake_pdf.AUTO_TABLE and len(a.items) == 6  # répartition par taille reconnue sans modèle
 
 
 def test_analyze_explicit_choice_errors(fake_pdf):

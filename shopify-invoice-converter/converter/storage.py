@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Iterator, Mapping, Optional, Protocol
 
 from .formats import columns_from_text, columns_to_text, table_from_text, table_to_text
+from .sizes import DOC_SIZES
 
 log = logging.getLogger("converter.storage")
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -41,16 +42,19 @@ SHEET_SCHEMAS: dict[str, list[str]] = {
     "collections_allowed": ["collection"],
     "collections_by_type": ["type_key", "collection"],
     "supplier_formats": ["name", "columns", "notes"],
+    "size_conversions": ["chart", "system", "from", "to"],
 }
 # Colonnes facultatives : lues si présentes (Sheets créés avant leur ajout), toujours écrites
 SHEET_OPTIONAL: dict[str, list[str]] = {
-    "supplier_formats": ["match", "table"],
+    "product_types": ["size_chart"],
+    "supplier_formats": ["match", "table", "size_system", "size_chart"],
 }
 DOC_SHEETS: dict[str, list[str]] = {
     DOC_RULES: ["brands", "colors", "product_types", "settings"],
     DOC_MAPPING: ["type_mapping"],
     DOC_COLLECTIONS: ["collections_allowed", "collections_by_type"],
     DOC_FORMATS: ["supplier_formats"],
+    DOC_SIZES: ["size_conversions"],
 }
 ALL_SHEETS = list(SHEET_SCHEMAS)
 VALID_KINDS = ["deck", "wheel", "apparel", "cap", "other"]
@@ -164,6 +168,7 @@ def sheets_to_doc(name: str, sheets: Mapping[str, Rows]) -> dict:
                 "type_key": r["type_key"],
                 "kind": r["kind"] or "other",
                 "label": r["label"],
+                **({"size_chart": r["size_chart"]} if r["size_chart"] else {}),
             }
             for r in t("product_types")
             if r["type_key"]
@@ -190,18 +195,25 @@ def sheets_to_doc(name: str, sheets: Mapping[str, Rows]) -> dict:
             entry: dict = {"name": r["name"]}
             if r["table"]:  # modèle par en-têtes
                 entry.update(table=table_from_text(r["table"]), match=r["match"])
+                entry.update({k: r[k] for k in ("size_system", "size_chart") if r[k]})
             else:
                 entry["columns"] = columns_from_text(r["columns"])
             entry["notes"] = r["notes"]
             formats.append(entry)
         return {"formats": formats}
+    if name == DOC_SIZES:
+        return {"charts": [{k: r[k] for k in SHEET_SCHEMAS["size_conversions"]} for r in t("size_conversions") if r["chart"]]}
     raise StorageError(f"Document de configuration inconnu : {name}")
 
 
 def doc_to_sheets(name: str, data: Mapping) -> dict[str, Rows]:
     """Éclate un document de config en onglets (en-tête + lignes, tout en texte)."""
     def sheet(name_: str, records: list[list[str]]) -> Rows:
-        return [list(SHEET_SCHEMAS[name_]), *records]
+        optional = SHEET_OPTIONAL.get(name_, [])
+        for row in records if optional else []:  # cellules facultatives vides de fin retirées
+            while len(row) > len(SHEET_SCHEMAS[name_]) and row[-1] == "":
+                row.pop()
+        return [[*SHEET_SCHEMAS[name_], *optional], *records]
 
     if name == DOC_RULES:
         return {
@@ -209,7 +221,8 @@ def doc_to_sheets(name: str, data: Mapping) -> dict[str, Rows]:
             "colors": sheet("colors", [[c] for c in data.get("colors", [])]),
             "product_types": sheet(
                 "product_types",
-                [[", ".join(r.get("keywords", [])), r.get("type_key", ""), r.get("kind", ""), r.get("label", "")]
+                [[", ".join(r.get("keywords", [])), r.get("type_key", ""), r.get("kind", ""), r.get("label", ""),
+                  r.get("size_chart", "")]
                  for r in data.get("product_types", [])],
             ),
             "settings": sheet("settings", [["sized_numeric_kinds", ", ".join(data.get("sized_numeric_kinds", ["apparel"]))]]),
@@ -222,15 +235,21 @@ def doc_to_sheets(name: str, data: Mapping) -> dict[str, Rows]:
             "collections_by_type": sheet("collections_by_type", [[k, v] for k, v in data.get("by_type_key", {}).items()]),
         }
     if name == DOC_FORMATS:
-        rows = [
-            [f.get("name", ""), columns_to_text(f.get("columns", [])), f.get("notes", ""),
-             f.get("match", ""), table_to_text(f.get("table") or {})]
-            for f in data.get("formats", [])
-        ]
-        for row in rows:  # cellules vides de fin retirées : les formats simples restent sur 3 colonnes
-            while row and row[-1] == "":
-                row.pop()
-        return {"supplier_formats": [[*SHEET_SCHEMAS["supplier_formats"], *SHEET_OPTIONAL["supplier_formats"]], *rows]}
+        return {
+            "supplier_formats": sheet(
+                "supplier_formats",
+                [[f.get("name", ""), columns_to_text(f.get("columns", [])), f.get("notes", ""), f.get("match", ""),
+                  table_to_text(f.get("table") or {}), f.get("size_system", ""), f.get("size_chart", "")]
+                 for f in data.get("formats", [])],
+            )
+        }
+    if name == DOC_SIZES:
+        return {
+            "size_conversions": sheet(
+                "size_conversions",
+                [[str(r.get(k, "")) for k in SHEET_SCHEMAS["size_conversions"]] for r in data.get("charts", [])],
+            )
+        }
     raise StorageError(f"Document de configuration inconnu : {name}")
 
 

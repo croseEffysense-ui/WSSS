@@ -15,6 +15,8 @@ import re
 import unicodedata
 from typing import Optional
 
+from .sizes import SIZE_SYSTEMS
+
 # clé interne (attribut de LineItem) -> libellé affiché
 FIELD_LABELS: dict[str, str] = {
     "qty": "Qté",
@@ -30,6 +32,8 @@ TABLE_FIELDS: dict[str, str] = {
     "sku": "SKU / Référence",
     "description": "Description",
     **FIELD_LABELS,
+    # répartition par taille « 40 / 1  42 / 2 » (ou une seule taille par ligne) : une ligne par taille
+    "sizes": "Tailles / Quantités",
 }
 
 # Variantes acceptées quand le format est saisi à la main (ex. dans Google Sheets)
@@ -46,6 +50,7 @@ _TABLE_ALIASES: dict[str, str] = {
     **_ALIASES,
     "sku": "sku", "sku reference": "sku", "reference": "sku", "ref": "sku",
     "description": "description", "designation": "description",
+    "sizes": "sizes", "tailles quantites": "sizes", "taille quantite": "sizes", "tailles": "sizes", "taille": "sizes",
 }
 
 
@@ -132,10 +137,16 @@ def validate_table(name: str, table: dict[str, str]) -> list[str]:
     unknown = [k for k in table if k not in TABLE_FIELDS]
     if unknown:
         errors.append(f"champ(s) inconnu(s) : {', '.join(unknown)} (permis : {', '.join(TABLE_FIELDS.values())})")
-    if not str(table.get("qty", "")).strip():
-        errors.append("l'en-tête de la colonne « Qté » est indispensable")
-    if not (str(table.get("sku", "")).strip() or str(table.get("description", "")).strip()):
-        errors.append("indiquez l'en-tête de la colonne « SKU / Référence » (ou au moins « Description »)")
+    has = lambda k: bool(str(table.get(k, "")).strip())  # noqa: E731
+    if has("qty"):
+        if not (has("sku") or has("description")):
+            errors.append("indiquez l'en-tête de la colonne « SKU / Référence » (ou au moins « Description »)")
+    elif not (has("sku") and any(has(k) for k in ("unit_price_gross", "unit_price_net", "total", "public_price"))):
+        # sans colonne Qté, les quantités sont lues dans une grille « Taille: / Quantité: » sous chaque article
+        errors.append(
+            "indiquez l'en-tête de la colonne « Qté » (ou, si les quantités sont dans une grille Taille / Quantité "
+            "sous chaque article, au moins « SKU / Référence » et un prix)"
+        )
     labels = [normalize_label(v) for v in table.values() if str(v).strip()]
     dupes = sorted({v for v in labels if labels.count(v) > 1})
     if dupes:
@@ -159,6 +170,9 @@ def formats_from_doc(doc: dict) -> tuple[dict[str, list[str]], dict[str, dict], 
         table = {str(k): str(v) for k, v in (entry.get("table") or {}).items() if str(v).strip()}
         if table:
             errors = validate_table(name, table)
+            system = str(entry.get("size_system") or "").strip().upper()
+            if system and system not in SIZE_SYSTEMS:
+                errors.append(f"système de tailles « {system} » inconnu (permis : vide = FR/EU, {', '.join(SIZE_SYSTEMS)})")
         else:
             columns = [str(c) for c in entry.get("columns", [])]
             errors = validate_format(name, columns)
@@ -169,7 +183,12 @@ def formats_from_doc(doc: dict) -> tuple[dict[str, list[str]], dict[str, dict], 
             continue
         seen.add(name.lower())
         if table:
-            templates[name] = {"table": table, "match": str(entry.get("match") or "").strip()}
+            templates[name] = {
+                "table": table,
+                "match": str(entry.get("match") or "").strip(),
+                "size_system": str(entry.get("size_system") or "").strip().upper(),  # vide = tailles déjà FR/EU
+                "size_chart": str(entry.get("size_chart") or "").strip(),  # tableau par défaut (type de produit inconnu)
+            }
         else:
             profiles[name] = columns
     return profiles, templates, problems
@@ -181,8 +200,12 @@ def profiles_from_doc(doc: dict) -> tuple[dict[str, list[str]], list[str]]:
     return profiles, problems
 
 
-def upsert_template(doc: dict, name: str, table: dict[str, str], match: str = "", notes: str = "") -> dict:
+def upsert_template(
+    doc: dict, name: str, table: dict[str, str], match: str = "", notes: str = "", size_system: str = "", size_chart: str = ""
+) -> dict:
     """Ajoute (ou remplace, même nom sans tenir compte de la casse) un modèle par en-têtes ; retourne le nouveau doc."""
-    entry = {"name": name.strip(), "table": {k: v for k, v in table.items() if str(v).strip()}, "match": match.strip(), "notes": notes}
+    entry = {"name": name.strip(), "table": {k: v for k, v in table.items() if str(v).strip()}, "match": match.strip()}
+    entry.update({k: v.strip() for k, v in (("size_system", size_system.upper()), ("size_chart", size_chart)) if v.strip()})
+    entry["notes"] = notes
     formats = [f for f in doc.get("formats", []) if str(f.get("name", "")).strip().lower() != name.strip().lower()]
     return {**doc, "formats": [*formats, entry]}

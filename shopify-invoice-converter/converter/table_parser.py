@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import io
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from statistics import median
 from typing import Optional
 
@@ -49,6 +49,7 @@ HEADER_SYNONYMS: dict[str, list[str]] = {
         r"^prix\b",
     ],
     "description": [r"^(description|designation|libelle|desc)\b", r"^(produit|product|nom|name)\b"],
+    "sizes": [r"^(taille|size|pointure)s?\b.*\b(quantite|qte|qty|quantity)", r"^(tailles?|sizes?|pointures?)$"],
 }
 
 NUMBER_RE = re.compile(r"^[€$£]?-?\d+(?:[ .,]\d{3})*(?:[.,]\d+)?-?%?€?$")
@@ -58,6 +59,12 @@ INLINE_SKU_RE = re.compile(r"^(sku|ref|r[ée]f|r[ée]f[ée]rence|art|article|ite
 FOOTER_RE = re.compile(
     r"^(sous[- ]?total|total|montant total|montant ht|net [aà] payer|subtotal|tva|vat|report|a reporter)\b", re.I
 )
+# « 3913 / 1 », « 42/2 », « M / 3 » : une taille, une barre, une quantité entière
+SIZE_PAIR_RE = re.compile(r"(?<!\S)([A-Za-z0-9][A-Za-z0-9.,½⅓⅔+]*)\s*/\s*(\d{1,4})(?=\s|$)")
+# grille sous l'article (ex. Encore) : « Taille:  5  5.5  6 » puis « Quantité:  2  2  1 », alignées colonne par colonne
+GRID_SIZE_LABEL_RE = re.compile(r"^(tailles?|sizes?|pointures?)\s*:$", re.I)
+GRID_QTY_LABEL_RE = re.compile(r"^(quantit[ée]s?|qt[ée]s?|qty|quantity)\s*:$", re.I)
+FRACTION_SIZE_RE = re.compile(r"^([1-5]\d)(13|23)$")  # pointures Adidas : 3913 = 39 1/3, 4223 = 42 2/3
 NOISE_RE = re.compile(
     r"(intrastat|intra\.\d|origine\s*:|country of origin|hs code|commande client|num[ée]ro de livraison|votre r[ée]f|"
     r"no\.?\s*cmmde|\bno\.?\s+(commande|d'envoi)\b|date de livraison|^page\b|^\d+\s*/\s*\d+$)",
@@ -209,16 +216,19 @@ def assign_fields(columns: list[Column], mapping: Optional[dict[str, str]] = Non
     for c in columns:
         c.field = None
     if mapping:
-        targets = {fld: normalize_label(label) for fld, label in mapping.items() if normalize_label(label)}
+        # « Produit + Couleur » : la description peut réunir plusieurs colonnes
+        targets = [(fld, t) for fld, label in mapping.items() for t in mapping_targets(fld, label)]
+        found: set[tuple[str, str]] = set()
         # libellés identiques d'abord, puis approchants : « Prix » ne doit pas capter la colonne « Prix Net »
         for exact in (True, False):
-            for fld, target in targets.items():
-                if any(c.field == fld for c in columns):
+            for fld, target in targets:
+                if (fld, target) in found:
                     continue
                 for c in columns:
                     lab = normalize_label(c.label)
                     if c.field is None and (lab == target if exact else (target in lab or lab in target)):
                         c.field = fld
+                        found.add((fld, target))
                         break
         return
     for fld, patterns in HEADER_SYNONYMS.items():
@@ -227,6 +237,12 @@ def assign_fields(columns: list[Column], mapping: Optional[dict[str, str]] = Non
             if hit is not None:
                 hit.field = fld
                 break
+
+
+def mapping_targets(fld: str, label: str) -> list[str]:
+    """Libellés normalisés visés par un champ du modèle (plusieurs pour « Description = Produit + Couleur »)."""
+    parts = label.split("+") if fld == "description" else [label]
+    return [t for t in (normalize_label(p) for p in parts) if t]
 
 
 def _set_zones(columns: list[Column]) -> None:
@@ -252,17 +268,28 @@ def _merge_header(lines: list[Line]) -> list[Column]:
 
 
 def header_columns(lines: list[Line], mapping: Optional[dict[str, str]] = None) -> list[Column]:
-    """Colonnes (champs + zones) d'un en-tête choisi à la main (formulaire « Créer un modèle » du mode debug)."""
+    """Colonnes (champs + zones) d'un en-tête choisi à la main (formulaire de création de modèle)."""
     columns = _merge_header(lines)
     assign_fields(columns, mapping)
     _set_zones(columns)
     return columns
 
 
+PRICE_FIELDS = {"unit_price_gross", "unit_price_net", "total", "public_price"}
+
+
 def _header_score(columns: list[Column]) -> int:
-    """Nombre de champs reconnus ; 0 si l'essentiel manque (Qté + référence ou désignation)."""
+    """Nombre de champs reconnus ; 0 si l'essentiel manque.
+
+    En-tête valable : Qté + référence ou désignation, ou bien (quantités dans une grille « Taille: / Quantité: »
+    sous chaque article, ex. Encore) référence + au moins un prix. Un en-tête avec Qté passe toujours devant.
+    """
     fields = {c.field for c in columns if c.field}
-    return len(fields) if "qty" in fields and fields & {"sku", "description"} else 0
+    if "qty" in fields and fields & {"sku", "description"}:
+        return 10 + len(fields)
+    if "sku" in fields and fields & PRICE_FIELDS and len(fields) >= 3:
+        return len(fields)
+    return 0
 
 
 def find_header(lines: list[Line], mapping: Optional[dict[str, str]] = None) -> Optional[tuple[int, int, list[Column]]]:
@@ -271,7 +298,7 @@ def find_header(lines: list[Line], mapping: Optional[dict[str, str]] = None) -> 
     Retourne (index de début, index de fin exclu, colonnes avec champs et zones) ou None.
     """
     best: Optional[tuple[tuple[int, int, int], int, int, list[Column]]] = None
-    targets = {k: normalize_label(v) for k, v in (mapping or {}).items()}
+    targets = {k: mapping_targets(k, v) for k, v in (mapping or {}).items()}
     for i in range(len(lines)):
         for size in (1, 2, 3):
             block = lines[i : i + size]
@@ -283,7 +310,7 @@ def find_header(lines: list[Line], mapping: Optional[dict[str, str]] = None) -> 
             assign_fields(columns, mapping)
             score = _header_score(columns)
             # à égalité, le bloc dont les libellés collent exactement au modèle (en-tête complet), puis le plus court
-            exact = sum(1 for c in columns if c.field and targets.get(c.field) == normalize_label(c.label))
+            exact = sum(1 for c in columns if c.field and normalize_label(c.label) in targets.get(c.field, []))
             if score and (best is None or (score, exact, -size) > best[0]):
                 best = ((score, exact, -size), i, i + size, columns)
     if best is None:
@@ -337,12 +364,76 @@ def _sku_word(line: Line, fields: dict[str, Column]) -> Optional[Word]:
     return None
 
 
-def _numeric(line: Line, fld: str, columns: list[Column]) -> Optional[Word]:
+def decode_size(code: str) -> str:
+    """Code de taille de la facture -> taille lisible : « 3913 » -> « 39 1/3 », « 4223 » -> « 42 2/3 », sinon inchangé."""
+    m = FRACTION_SIZE_RE.match(code)
+    return f"{m.group(1)} {'1/3' if m.group(2) == '13' else '2/3'}" if m else code
+
+
+def _size_pairs(line: Line, columns: list[Column]) -> list[tuple[str, int, list[Word]]]:
+    """Paires (code taille, quantité, mots) de la colonne « Tailles / Quantités ».
+
+    La répartition déborde souvent largement de son en-tête (elle commence sous « Quantité Totale ») :
+    on la cherche entre les centres des colonnes voisines.
+    """
+    col = by_field(columns).get("sizes")
+    if col is None:
+        return []
+    i = columns.index(col)
+    lo = columns[i - 1].center if i else float("-inf")
+    hi = columns[i + 1].center if i + 1 < len(columns) else float("inf")
+    text, spans = "", []
+    for w in line.words:
+        if lo <= w.xc < hi:
+            spans.append((len(text), len(text) + len(w.text), w))
+            text += w.text + " "
+    return [
+        (m.group(1), int(m.group(2)), [w for s, e, w in spans if s < m.end() and e > m.start()])
+        for m in SIZE_PAIR_RE.finditer(text)
+    ]
+
+
+def grid_row(line: Line) -> Optional[tuple[str, list[Word]]]:
+    """Ligne d'une grille de tailles : ("sizes" | "qty", mots des valeurs après le libellé) ou None."""
+    for i, w in enumerate(line.words):
+        values = line.words[i + 1 :]
+        if values and GRID_SIZE_LABEL_RE.match(w.text):
+            return "sizes", values
+        if values and GRID_QTY_LABEL_RE.match(w.text) and all(parse_amount(v.text) is not None for v in values):
+            return "qty", values
+    return None
+
+
+def _grid_pairs(lines: list[Line]) -> list[tuple[str, int, list[Word]]]:
+    """Grille « Taille: / Quantité: » -> paires (taille, quantité) : chaque quantité va à la taille au-dessus d'elle."""
+    sizes: list[Word] = []
+    out: list[tuple[str, int, list[Word]]] = []
+    for ln in lines:
+        row = grid_row(ln)
+        if row and row[0] == "sizes":
+            sizes = row[1]
+        elif row and row[0] == "qty" and sizes:
+            for q in row[1]:
+                value = parse_amount(q.text)
+                if value and value > 0:
+                    size = min(sizes, key=lambda s: abs(s.xc - q.xc))
+                    out.append((size.text, int(value), [size, q]))
+            sizes = []
+    return out
+
+
+def _size_words(line: Line, columns: list[Column]) -> set[int]:
+    return {id(w) for _, _, words in _size_pairs(line, columns) for w in words}
+
+
+def _numeric(line: Line, fld: str, columns: list[Column], skip: Optional[set[int]] = None) -> Optional[Word]:
     """Nombre de la ligne rangé sous la colonne `fld` : chaque nombre va à l'en-tête le plus proche,
-    et si plusieurs nombres tombent sous la même colonne (tailles « 40 / 1 »…), le plus proche gagne."""
+    et si plusieurs nombres tombent sous la même colonne, le plus proche gagne. Les mots de la répartition
+    par taille (« 40 / 1 ») ne sont jamais pris pour une quantité ou un prix."""
+    skip = _size_words(line, columns) if skip is None else skip
     best: Optional[tuple[float, Word]] = None
     for w in line.words:
-        if parse_amount(w.text) is None or BARCODE_RE.match(w.text):
+        if id(w) in skip or parse_amount(w.text) is None or BARCODE_RE.match(w.text):
             continue
         col = min(columns, key=lambda c: c.distance(w))
         if col.field == fld and (best is None or col.distance(w) < best[0]):
@@ -404,15 +495,25 @@ def parse_pages(pages: list[list[Line]], mapping: Optional[dict[str, str]] = Non
             prev = line
             if gap and pending:
                 flush(pending, not page_has_item)
-            sku, qty = _sku_word(line, fields), _numeric(line, "qty", columns)
+            grid = grid_row(line)
+            if grid and rows and page_has_item:  # « Taille: 5 5.5… » / « Total ht ligne: 945€ Quantité: 2 2… »
+                rows[-1][1].append(line)
+                lt.role, lt.detail = ROLE_CONT, f"grille {'des tailles' if grid[0] == 'sizes' else 'des quantités'} de {rows[-1][0].text.split()[0]}"
+                continue
+            sku = _sku_word(line, fields)
+            if "qty" in fields:
+                qty = _numeric(line, "qty", columns)
+            else:  # quantités dans une grille sous l'article : la ligne article porte la référence et un prix
+                qty = next((w for f in PRICE_FIELDS & set(fields) if (w := _numeric(line, f, columns))), None)
             if not (sku and qty) and _is_footer(line):
                 lt.role, lt.detail = ROLE_FOOTER, "fin du tableau (total / sous-total)"
                 flush(pending, not page_has_item)
                 inside = False
-            elif NOISE_RE.search(line.text):
+            elif NOISE_RE.search(line.text) and not _size_pairs(line, columns):  # « 4423 / 1 » n'est pas « page 1/4 »
                 lt.role, lt.detail = ROLE_IGNORED, "ligne d'information (n° commande, douane, origine, page…)"
             elif sku and qty:
-                lt.role, lt.detail = ROLE_ITEM, f"SKU {sku.text} · Qté {qty.text}"
+                lt.role = ROLE_ITEM
+                lt.detail = f"SKU {sku.text} · " + (f"Qté {qty.text}" if "qty" in fields else f"prix {qty.text}, quantités dans la grille")
                 for ln in pending:
                     mark(ln, ROLE_CONT, f"début de désignation de {sku.text}")
                 rows.append((line, list(pending)))
@@ -432,26 +533,36 @@ def parse_pages(pages: list[list[Line]], mapping: Optional[dict[str, str]] = Non
             "Référence/Code/Article ou Désignation (ou un modèle fournisseur dont les libellés correspondent)."
         )
         return [], trace
-    items = [_build_item(anchor, extra, columns, trace) for anchor, extra in rows]
+    items = [it for anchor, extra in rows for it in _build_items(anchor, extra, columns, trace)]
     if not items:
         trace.problem = "En-tête trouvé, mais aucune ligne ne contient à la fois une référence et une quantité sous ces colonnes."
     return items, trace
 
 
-def _build_item(anchor: Line, extra: list[Line], columns: list[Column], trace: TableTrace) -> LineItem:
+def _build_items(anchor: Line, extra: list[Line], columns: list[Column], trace: TableTrace) -> list[LineItem]:
+    """Un article de la facture -> une ligne, ou une ligne par taille s'il a une répartition « 40 / 1  42 / 2 »
+    ou une grille « Taille: / Quantité: »."""
     fields = by_field(columns)
-    sku_col, desc_col = fields.get("sku"), fields.get("description")
+    sku_col, size_col = fields.get("sku"), fields.get("sizes")
+    desc_cols = [c for c in columns if c.field == "description"]
+    ordered = sorted([anchor, *extra], key=lambda l: (l.page, l.top))
+    grid_lines = [ln for ln in ordered if grid_row(ln)]
     sku_word = _sku_word(anchor, fields)
     item = LineItem(sku=sku_word.text if sku_word else "")
     used: set[int] = {id(sku_word)}
     if sku_word is not None and (sku_col is None or not sku_col.holds(sku_word)):  # « SKU: F1100 » dans la désignation
         i = anchor.words.index(sku_word)
         used.add(id(anchor.words[i - 1]))
+    pairs = [p for ln in ordered for p in _size_pairs(ln, columns)] or _grid_pairs(grid_lines)
+    used |= {id(w) for _, _, words in pairs for w in words}
+    used |= {id(w) for ln in grid_lines for w in grid_row(ln)[1]}
 
     for fld in NUMERIC_FIELDS:
         if fld not in fields:
             continue
-        word = _numeric(anchor, fld, columns) or next((w for ln in extra if (w := _numeric(ln, fld, columns))), None)
+        word = _numeric(anchor, fld, columns, used) or next(
+            (w for ln in extra if (w := _numeric(ln, fld, columns, used))), None
+        )
         if word is None:
             continue
         used.add(id(word))
@@ -463,10 +574,17 @@ def _build_item(anchor: Line, extra: list[Line], columns: list[Column], trace: T
         else:
             setattr(item, fld, value)
 
+    if size_col is not None and not pairs:  # colonne « Taille » simple : une taille par ligne
+        size = " ".join(w.text for w in anchor.words if size_col.holds(w) and id(w) not in used)
+        item.size = size
+        used |= {id(w) for w in anchor.words if size_col.holds(w)}
+
     desc: list[str] = []
-    for ln in sorted([anchor, *extra], key=lambda l: (l.page, l.top)):
+    for ln in ordered:
+        if ln in grid_lines:  # « Produits: 21  Taille: … » n'est pas de la désignation
+            continue
         # sur la ligne article, la désignation déborde souvent sous l'en-tête Référence ; pas sur les lignes de suite
-        zones = [c for c in (desc_col, sku_col if (ln is anchor or desc_col is None) else None) if c is not None]
+        zones = [*desc_cols, *([sku_col] if sku_col is not None and (ln is anchor or not desc_cols) else [])]
         for w in ln.words:
             if id(w) in used:
                 continue
@@ -481,13 +599,33 @@ def _build_item(anchor: Line, extra: list[Line], columns: list[Column], trace: T
         item.unit_price_net = item.unit_price_gross
         if item.qty and item.total is not None and abs(item.qty * item.unit_price_gross - item.total) > tol(item.total):
             item.unit_price_net = round(item.total / item.qty, 2)  # remise appliquée : coût réel = Total / Qté
-    trace.cells.append({c.label: " ".join(w.text for w in anchor.words if c.holds(w)) for c in columns})
-    if item.qty <= 0:
+    cells_row = {c.label: " ".join(w.text for w in anchor.words if c.holds(w)) for c in columns}
+    if pairs:
+        cells_row["→ Tailles lues"] = ", ".join(f"{decode_size(code)} ×{q}" for code, q, _ in pairs)
+    trace.cells.append(cells_row)
+    if item.qty <= 0 and not pairs:
         item.warnings.append("Quantité absente ou nulle")
     if item.qty and item.unit_price_net is not None and item.total is not None:
         if abs(item.qty * item.unit_price_net - item.total) > tol(item.total):
             item.warnings.append("Qté × PU Net ≠ Total")
-    return item
+    if not pairs:
+        return [item]
+
+    split_total = sum(q for _, q, _ in pairs)
+    out = []
+    for code, q, _ in pairs:
+        variant = replace(
+            item,
+            sku=f"{item.sku}-{code}" if item.sku else code,  # un SKU par variante (exigé par Shopify)
+            qty=q,
+            size=decode_size(code),
+            total=round(q * item.unit_price_net, 2) if item.unit_price_net is not None else None,
+            warnings=list(item.warnings),
+        )
+        if item.qty and split_total != item.qty:
+            variant.warnings.append(f"Somme des tailles ({split_total}) ≠ Qté totale ({item.qty})")
+        out.append(variant)
+    return out
 
 
 def parse_pdf_table(pdf_bytes: bytes, mapping: Optional[dict[str, str]] = None) -> tuple[list[LineItem], TableTrace]:

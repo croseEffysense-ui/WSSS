@@ -1,16 +1,18 @@
-"""Mode debug : montre ce que l'application lit dans un PDF (texte, positions, colonnes, lignes, méthodes testées)
-et permet d'enregistrer un modèle de facture fournisseur à partir de ce PDF."""
+"""Mode debug : montre ce que l'application lit dans un PDF (texte, positions, colonnes, lignes, méthodes testées),
+et formulaire de création / modification d'un modèle de facture fournisseur à partir d'un PDF (affiché sous chaque dépôt)."""
 from __future__ import annotations
 
 import re
+from typing import Optional
 
 import pandas as pd
 import streamlit as st
 
-from .analysis import METHOD_TAIL, Analysis
+from .analysis import METHOD_TAIL, METHOD_TEMPLATE, Analysis
 from .config import load_json, save_json
 from .formats import TABLE_FIELDS, upsert_template, validate_table
 from .models import items_to_df
+from .sizes import DOC_SIZES, SIZE_SYSTEMS, chart_names
 from .storage import DOC_FORMATS, StorageError
 from .table_parser import (
     ROLE_CONT, ROLE_FOOTER, ROLE_HEADER, ROLE_IGNORED, ROLE_ITEM, ROLE_OUTSIDE, Line, cells, header_columns, parse_pages,
@@ -34,8 +36,8 @@ def render_debug(a: Analysis, key: str) -> None:
     for note in a.notes:
         st.caption(f"ℹ️ {note}")
 
-    t_methods, t_cols, t_lines, t_cells, t_text, t_words, t_model = st.tabs(
-        ["Méthodes testées", "Colonnes", "Lignes analysées", "Cellules par article", "Texte brut", "Mots (x, y)", "💾 Créer un modèle"]
+    t_methods, t_cols, t_lines, t_cells, t_text, t_words = st.tabs(
+        ["Méthodes testées", "Colonnes", "Lignes analysées", "Cellules par article", "Texte brut", "Mots (x, y)"]
     )
     with t_methods:
         _methods_tab(a, key)
@@ -56,8 +58,6 @@ def render_debug(a: Analysis, key: str) -> None:
         st.download_button("📥 Télécharger le texte", (a.text or "").encode("utf-8"), file_name="texte_pdf.txt", key=f"dbg-dl-{key}")
     with t_words:
         _words_tab(a, key)
-    with t_model:
-        _model_tab(a, key)
 
 
 def _methods_tab(a: Analysis, key: str) -> None:
@@ -162,11 +162,54 @@ def _header_choices(a: Analysis) -> tuple[list[Line], int, int]:
     return lines, default, min(max(size, 1), 3)
 
 
-def _model_tab(a: Analysis, key: str) -> None:
+def supplier_status(a: Analysis, templates: dict[str, dict]) -> tuple[str, str, Optional[dict]]:
+    """(niveau « success » | « info » | « warning », message, modèle utilisé ou None) pour le bandeau sous le PDF."""
+    chosen = a.chosen
+    template = templates.get(chosen.name) if chosen and chosen.method == METHOD_TEMPLATE else None
+    if template and chosen.supplier_match:
+        return "success", f"🏷️ Modèle fournisseur utilisé : **{chosen.name}** — reconnu grâce à « {template['match']} » dans le PDF.", template
+    if template:
+        reason = f"son identifiant « {template['match']} » est absent de ce PDF" if template.get("match") else "il n'a pas d'identifiant"
+        return "info", f"🏷️ Modèle fournisseur utilisé : **{chosen.name}** (choisi dans la liste ; {reason}).", template
+    if chosen:
+        return "warning", (
+            f"🏷️ **Aucun modèle fournisseur** ne correspond à ce PDF : il a été lu avec « {chosen.name} ». "
+            "Créez un modèle ci-dessous pour que les prochaines factures de ce fournisseur soient reconnues."
+        ), None
+    return "warning", "🏷️ **Aucun modèle fournisseur** ne correspond à ce PDF. Créez-en un ci-dessous.", None
+
+
+def render_supplier_section(a: Analysis, templates: dict[str, dict], key: str) -> None:
+    """Bandeau « modèle fournisseur utilisé » + formulaire pour en créer un (ou modifier celui utilisé)."""
+    level, message, template = supplier_status(a, templates)
+    getattr(st, level)(message)
+    if not a.pages:
+        return
+    name = a.chosen.name if template else ""
+    label = f"✏️ Modifier le modèle « {name} » à partir de ce PDF" if template else "➕ Créer un modèle fournisseur à partir de ce PDF"
+    with st.expander(label, expanded=template is None):
+        render_template_form(a, key, name, template)
+
+
+IDENTIFIER_RE = re.compile(r"\b(?:FR|DE|GB|IT|ES|BE|NL|LU|AT|PT|IE|DK|SE|PL)[0-9A-Z]{8,12}\b")
+EMAIL_DOMAIN_RE = re.compile(r"[\w.+-]+@([\w-]+(?:\.[\w-]+)+)")
+OTHER = "✏️ Autre (saisir)"
+
+
+def identifier_suggestions(text: str) -> list[str]:
+    """Textes propres à un fournisseur trouvés dans le PDF : n° de TVA intracommunautaire et domaines e-mail."""
+    found = [m.group(0) for m in IDENTIFIER_RE.finditer(text or "")] + [m.group(1).lower() for m in EMAIL_DOMAIN_RE.finditer(text or "")]
+    return list(dict.fromkeys(f for f in found if any(ch.isdigit() for ch in f) or "." in f))
+
+
+def render_template_form(a: Analysis, key: str, template_name: str = "", template: Optional[dict] = None) -> None:
+    """Formulaire de création (ou de modification, si `template` est fourni) d'un modèle fournisseur à partir du PDF."""
+    template = template or {}
     st.markdown(
         "Enregistrez la façon de lire **ce fournisseur** : choisissez la ligne d'en-tête du tableau, "
         "associez chaque information à une colonne, vérifiez l'aperçu puis enregistrez. "
         "Le modèle sera ensuite proposé dans « Format fournisseur » et utilisé par la détection automatique."
+        + (" Pour créer un **nouveau** modèle au lieu de modifier celui-ci, changez simplement le nom." if template_name else "")
     )
     candidates, default, size = _header_choices(a)
     if not candidates:
@@ -183,16 +226,31 @@ def _model_tab(a: Analysis, key: str) -> None:
     n = c_n.number_input("Lignes d'en-tête", 1, 3, value=size, key=f"dbg-hdrn-{key}", help="Ex. 2 si « Prix » est au-dessus de « Net »")
     page = a.pages[candidates[idx].page - 1]
     start = next(i for i, line in enumerate(page) if line is candidates[idx])
-    columns = header_columns(page[start : start + int(n)])
+    block = page[start : start + int(n)]
+    # modification : les associations du modèle d'abord (ex. Description = Produit + Couleur), sinon détection automatique
+    columns = header_columns(block, template.get("table") or None)
+    if not any(c.field for c in columns):
+        columns = header_columns(block)
     labels = [c.label for c in columns]
 
-    st.caption("Pour chaque information, l'en-tête de colonne correspondant sur la facture (— = absente de la facture).")
+    st.caption(
+        "Pour chaque information, l'en-tête de colonne correspondant sur la facture (— = absente de la facture). "
+        "La description peut réunir plusieurs colonnes (ex. Produit + Couleur). Sans colonne Qté, les quantités "
+        "sont lues dans une grille « Taille: / Quantité: » sous chaque article."
+    )
     mapping: dict[str, str] = {}
     grid = st.columns(4)
     for i, (fld, label) in enumerate(TABLE_FIELDS.items()):
+        widget_key = f"dbg-map-{key}-{fld}-{idx}-{n}"
+        if fld == "description":
+            auto_desc = [c.label for c in columns if c.field == fld]
+            chosen = grid[i % 4].multiselect(label, labels, default=auto_desc, key=widget_key)
+            if chosen:
+                mapping[fld] = " + ".join(chosen)
+            continue
         auto = next((c.label for c in columns if c.field == fld), NONE)
         options = [NONE, *labels]
-        choice = grid[i % 4].selectbox(label, options, index=options.index(auto), key=f"dbg-map-{key}-{fld}-{idx}-{n}")
+        choice = grid[i % 4].selectbox(label, options, index=options.index(auto), key=widget_key)
         if choice != NONE:
             mapping[fld] = choice
 
@@ -209,16 +267,37 @@ def _model_tab(a: Analysis, key: str) -> None:
         st.dataframe(items_to_df(items), width="stretch", hide_index=True)
 
     c_name, c_match = st.columns(2)
-    name = c_name.text_input("Nom du fournisseur", key=f"dbg-name-{key}", placeholder="ex. Adidas")
-    match = c_match.text_input(
-        "Texte qui identifie ce fournisseur (facultatif, recommandé)",
-        key=f"dbg-match-{key}",
-        placeholder="ex. adidas France, ou son n° de TVA",
-        help="Si ce texte figure dans un PDF, la détection automatique utilise ce modèle en priorité. "
-        "Choisissez un texte présent sur toutes ses factures (nom de la société, n° de TVA…).",
+    name = c_name.text_input("Nom du fournisseur", value=template_name, key=f"dbg-name-{key}", placeholder="ex. Adidas")
+    current = template.get("match", "")
+    options = [NONE, *identifier_suggestions(a.text), OTHER]
+    if current and current not in options:
+        options.insert(-1, current)
+    pick = c_match.selectbox(
+        "Texte qui identifie ce fournisseur (recommandé)",
+        options,
+        index=options.index(current) if current else 0,
+        key=f"dbg-matchpick-{key}",
+        help="Si ce texte figure dans un PDF, la détection automatique utilise ce modèle en priorité. Proposés : "
+        "n° de TVA et domaines e-mail trouvés dans ce PDF — prenez ceux du fournisseur, pas les vôtres.",
     )
+    match = c_match.text_input("Texte identifiant", key=f"dbg-match-{key}", placeholder="ex. adidas France") if pick == OTHER else ("" if pick == NONE else pick)
     if match and match.strip() and match.strip().lower() not in a.text.lower():
         st.caption("⚠️ Ce texte n'apparaît pas dans ce PDF : le fournisseur ne sera pas reconnu automatiquement.")
+    c_sys, c_chart = st.columns(2)
+    systems = ["FR / EU (aucune conversion)", *SIZE_SYSTEMS]
+    size_system = c_sys.selectbox(
+        "Tailles sur ses factures", systems, index=systems.index(template.get("size_system")) if template.get("size_system") in systems else 0,
+        key=f"dbg-sizes-{key}", help="Si ses tailles sont US/UK, elles seront converties en tailles françaises.",
+    )
+    size_system = size_system if size_system in SIZE_SYSTEMS else ""
+    charts = ["—", *chart_names(load_json(DOC_SIZES))]
+    size_chart = c_chart.selectbox(
+        "Tableau de tailles par défaut", charts,
+        index=charts.index(template.get("size_chart")) if template.get("size_chart") in charts else 0,
+        key=f"dbg-chart-{key}", disabled=not size_system,
+        help="Utilisé quand le type de produit n'est pas reconnu (ex. « Chaussures » pour un fournisseur de chaussures).",
+    )
+    size_chart = "" if size_chart == "—" or not size_system else size_chart
     if st.button("💾 Enregistrer le modèle", type="primary", key=f"dbg-save-{key}", disabled=not items):
         problems = validate_table(name, mapping)
         if problems:
@@ -228,7 +307,7 @@ def _model_tab(a: Analysis, key: str) -> None:
         try:
             doc = load_json(DOC_FORMATS)
             replaced = any(str(f.get("name", "")).strip().lower() == name.strip().lower() for f in doc.get("formats", []))
-            save_json(DOC_FORMATS, upsert_template(doc, name, mapping, match))
+            save_json(DOC_FORMATS, upsert_template(doc, name, mapping, match, size_system=size_system, size_chart=size_chart))
         except (OSError, ValueError, StorageError) as exc:
             st.error(f"Enregistrement impossible : {exc}")
             return

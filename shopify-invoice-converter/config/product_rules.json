@@ -1,20 +1,202 @@
 {
   "_comment": "Règles de détection. Complétez brands / colors / product_types avec vos données réelles.",
-  "brands": ["DGK", "Enjoi", "Baker", "Spitfire", "Thrasher", "Santa Cruz", "Independent", "Bones", "Vans", "Element", "Habitat", "Anti Hero", "Creature", "Powell Peralta", "Toy Machine", "Polar", "Girl", "Chocolate", "Zero"],
-  "colors": ["Black", "White", "Red", "Blue", "Navy", "Green", "Yellow", "Grey", "Gray", "Brown", "Orange", "Purple", "Pink", "Beige", "Cream", "Olive", "Noir", "Blanc", "Rouge", "Bleu", "Vert", "Jaune", "Gris", "Marron", "Rose", "Violet", "Natural"],
-  "product_types": [
-    {"keywords": ["deck", "board", "planche"], "type_key": "deck", "kind": "deck", "label": "Board"},
-    {"keywords": ["wheel", "wheels", "roue", "roues"], "type_key": "wheels", "kind": "wheel", "label": "Wheels"},
-    {"keywords": ["tee", "t-shirt", "tshirt", "t shirt"], "type_key": "tee", "kind": "apparel", "label": "T-Shirt"},
-    {"keywords": ["hoodie", "hooded", "sweatshirt", "crewneck"], "type_key": "hoodie", "kind": "apparel", "label": "Hoodie"},
-    {"keywords": ["jacket", "veste"], "type_key": "jacket", "kind": "apparel", "label": "Jacket"},
-    {"keywords": ["pant", "pants", "pantalon", "jean", "jeans"], "type_key": "pants", "kind": "apparel", "label": "Pants"},
-    {"keywords": ["short", "shorts"], "type_key": "shorts", "kind": "apparel", "label": "Shorts"},
-    {"keywords": ["cap", "snapback", "hat", "casquette"], "type_key": "cap", "kind": "cap", "label": "Cap"},
-    {"keywords": ["beanie", "bonnet"], "type_key": "beanie", "kind": "other", "label": "Beanie"},
-    {"keywords": ["wallet", "porte feuille", "portefeuille"], "type_key": "wallet", "kind": "other", "label": "Wallet"},
-    {"keywords": ["belt", "ceinture"], "type_key": "belt", "kind": "other", "label": "Belt"},
-    {"keywords": ["bag", "backpack", "sac"], "type_key": "bag", "kind": "other", "label": "Bag"}
+  "brands": [
+    "Anti Hero",
+    "Baker",
+    "Bones",
+    "Chocolate",
+    "Creature",
+    "DGK",
+    "Element",
+    "Enjoi",
+    "Girl",
+    "Habitat",
+    "Independent",
+    "Polar",
+    "Powell Peralta",
+    "Santa Cruz",
+    "Spitfire",
+    "Thrasher",
+    "Toy Machine",
+    "Vans",
+    "Zero"
   ],
-  "sized_numeric_kinds": ["apparel"]
+  "colors": [
+    "Black",
+    "White",
+    "Red",
+    "Blue",
+    "Navy",
+    "Green",
+    "Yellow",
+    "Grey",
+    "Gray",
+    "Brown",
+    "Orange",
+    "Purple",
+    "Pink",
+    "Beige",
+    "Cream",
+    "Olive",
+    "Noir",
+    "Blanc",
+    "Rouge",
+    "Bleu",
+    "Vert",
+    "Jaune",
+    "Gris",
+    "Marron",
+    "Rose",
+    "Violet",
+    "Natural"
+  ],
+  "product_types": [
+    {
+      "keywords": [
+        "deck",
+        "board",
+        "planche"
+      ],
+      "type_key": "deck",
+      "kind": "deck",
+      "label": "Board"
+    },
+    {
+      "keywords": [
+        "wheel",
+        "wheels",
+        "roue",
+        "roues"
+      ],
+      "type_key": "wheels",
+      "kind": "wheel",
+      "label": "Wheels"
+    },
+    {
+      "keywords": [
+        "tee",
+        "t-shirt",
+        "tshirt",
+        "t shirt"
+      ],
+      "type_key": "tee",
+      "kind": "apparel",
+      "label": "T-Shirt",
+      "size_chart": "Vêtements"
+    },
+    {
+      "keywords": [
+        "hoodie",
+        "hooded",
+        "sweatshirt",
+        "crewneck"
+      ],
+      "type_key": "hoodie",
+      "kind": "apparel",
+      "label": "Hoodie",
+      "size_chart": "Vêtements"
+    },
+    {
+      "keywords": [
+        "jacket",
+        "veste"
+      ],
+      "type_key": "jacket",
+      "kind": "apparel",
+      "label": "Jacket",
+      "size_chart": "Vêtements"
+    },
+    {
+      "keywords": [
+        "pant",
+        "pants",
+        "pantalon",
+        "jean",
+        "jeans"
+      ],
+      "type_key": "pants",
+      "kind": "apparel",
+      "label": "Pants",
+      "size_chart": "Pantalons"
+    },
+    {
+      "keywords": [
+        "short",
+        "shorts"
+      ],
+      "type_key": "shorts",
+      "kind": "apparel",
+      "label": "Shorts",
+      "size_chart": "Pantalons"
+    },
+    {
+      "keywords": [
+        "shoe",
+        "shoes",
+        "sneaker",
+        "sneakers",
+        "chaussure",
+        "chaussures",
+        "basket",
+        "baskets"
+      ],
+      "type_key": "shoes",
+      "kind": "other",
+      "label": "Shoes",
+      "size_chart": "Chaussures"
+    },
+    {
+      "keywords": [
+        "cap",
+        "snapback",
+        "hat",
+        "casquette"
+      ],
+      "type_key": "cap",
+      "kind": "cap",
+      "label": "Cap",
+      "size_chart": "Casquettes"
+    },
+    {
+      "keywords": [
+        "beanie",
+        "bonnet"
+      ],
+      "type_key": "beanie",
+      "kind": "other",
+      "label": "Beanie"
+    },
+    {
+      "keywords": [
+        "wallet",
+        "porte feuille",
+        "portefeuille"
+      ],
+      "type_key": "wallet",
+      "kind": "other",
+      "label": "Wallet"
+    },
+    {
+      "keywords": [
+        "belt",
+        "ceinture"
+      ],
+      "type_key": "belt",
+      "kind": "other",
+      "label": "Belt"
+    },
+    {
+      "keywords": [
+        "bag",
+        "backpack",
+        "sac"
+      ],
+      "type_key": "bag",
+      "kind": "other",
+      "label": "Bag"
+    }
+  ],
+  "sized_numeric_kinds": [
+    "apparel"
+  ]
 }

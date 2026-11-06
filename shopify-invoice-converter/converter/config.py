@@ -8,6 +8,7 @@ from typing import Optional
 import pandas as pd
 
 from .formats import formats_from_doc, profiles_from_doc
+from .sizes import chart_names, validate_charts
 from .storage import DOC_FORMATS, VALID_KINDS, ConfigStore, LocalJsonStore
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -57,32 +58,44 @@ def load_formats() -> tuple[dict[str, list[str]], dict[str, dict], list[str]]:
     return formats_from_doc(load_json(DOC_FORMATS))
 
 
-def config_health(rules: dict, mapping: dict, collections: dict, formats: Optional[dict] = None) -> list[str]:
+def config_health(
+    rules: dict, mapping: dict, collections: dict, formats: Optional[dict] = None, sizes: Optional[dict] = None
+) -> list[str]:
     """Points de configuration à compléter (liste vide = tout est prêt).
 
-    `formats` (document supplier_formats) est optionnel : s'il est fourni, les formats fournisseurs sont contrôlés.
+    `formats` (document supplier_formats) et `sizes` (size_conversions) sont optionnels : contrôlés s'ils sont fournis.
     """
     issues: list[str] = []
+    templates: dict[str, dict] = {}
     if formats is not None:
         profiles, templates, problems = formats_from_doc(formats)
         if not profiles and not templates:
             issues.append("Aucun format de facture fournisseur valide (la lecture automatique des tableaux reste active)")
         issues.extend(problems)
+    if sizes is not None:
+        issues += [f"Tailles : {e}" for e in validate_charts(sizes.get("charts", []))]
+        known = {c.lower() for c in chart_names(sizes)}
+        used = [(f"type « {r['type_key']} »", r.get("size_chart", "")) for r in rules.get("product_types", [])]
+        used += [(f"modèle « {n} »", t.get("size_chart", "")) for n, t in templates.items()]
+        missing = [f"{who} → « {chart} »" for who, chart in used if chart and chart.lower() not in known]
+        if missing:
+            issues.append(f"3 · Tailles : tableau(x) introuvable(s) : {', '.join(missing)}")
     if not rules.get("brands"):
-        issues.append("Aucune marque définie")
+        issues.append("1 · Marques : aucune marque définie")
     missing = [r["type_key"] for r in rules.get("product_types", []) if not mapping.get(r["type_key"])]
     if missing:
-        issues.append(f"{len(missing)} type(s) sans Product Type : {', '.join(missing)}")
+        issues.append(f"5 · Type Shopify : {len(missing)} type(s) de produit sans Type Shopify : {', '.join(missing)}")
     types = rules.get("product_types", [])
     bad_kind = [r["type_key"] for r in types if r.get("kind") not in VALID_KINDS]
     if bad_kind:
-        issues.append(f"kind invalide pour : {', '.join(bad_kind)} (valeurs permises : {', '.join(VALID_KINDS)})")
+        issues.append(f"2 · Types de produit : « Variantes créées » invalide pour : {', '.join(bad_kind)} "
+                      f"(valeurs permises : {', '.join(VALID_KINDS)})")
     keys = [r["type_key"] for r in types]
     dupes = sorted({k for k in keys if keys.count(k) > 1})
     if dupes:
-        issues.append(f"type_key en double : {', '.join(dupes)}")
+        issues.append(f"2 · Types de produit : code du type en double : {', '.join(dupes)}")
     if not collections.get("allowed"):
-        issues.append("Liste blanche des collections vide")
+        issues.append("6 · Collections : aucune collection Shopify listée")
     return issues
 
 

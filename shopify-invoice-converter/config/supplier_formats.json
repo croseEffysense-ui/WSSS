@@ -1,10 +1,32 @@
 {
   "_comment": "Formats de factures / BL par fournisseur. Deux sortes : (1) table = modèle par en-têtes {champ: en-tête de colonne sur la facture} (clés : sku, description, qty, unit_price_gross, unit_price_net, total, public_price) + match = texte qui identifie le fournisseur ; (2) columns = colonnes numériques en fin de ligne article, de gauche à droite. Renommez ces exemples au nom de vos fournisseurs.",
   "formats": [
-    {"name": "Facture simple (Qté, PU HT, Total)", "columns": ["qty", "unit_price_net", "total"], "notes": ""},
-    {"name": "BL complet (Qté, PU HT, PU Net, Total, Prix public TTC)", "columns": ["qty", "unit_price_gross", "unit_price_net", "total", "public_price"], "notes": ""},
-    {"name": "BL (Qté, PU HT, PU Net, Prix public TTC)", "columns": ["qty", "unit_price_gross", "unit_price_net", "public_price"], "notes": ""},
-    {"name": "Bon de commande (Qté, PU)", "columns": ["qty", "unit_price_net"], "notes": ""},
-    {"name": "Adidas", "table": {"sku": "Numéro d'Article", "description": "Description de l'Article", "qty": "Quantité Totale", "unit_price_gross": "Prix Catalogue", "unit_price_net": "Prix Net", "total": "Montant Net"}, "match": "adidas France", "notes": "Facture 11 colonnes (Taille / Quantité, Remise, Montant TVA… ignorées)"}
+    {
+      "name": "Adidas",
+      "table": {
+        "sku": "Numéro d'Article",
+        "description": "Description de l'Article",
+        "qty": "Quantité Totale",
+        "unit_price_gross": "Prix Catalogue",
+        "unit_price_net": "Prix Net",
+        "total": "Montant Net",
+        "sizes": "Taille / Quantité"
+      },
+      "match": "adidas France",
+      "notes": "Facture 11 colonnes ; une ligne par pointure (3913 = 39 1/3) ; Remise, Montant TVA… ignorées"
+    },
+    {
+      "name": "Encore",
+      "table": {
+        "sku": "Style-Code",
+        "description": "Produit + Couleur",
+        "unit_price_gross": "Prix HA ht",
+        "public_price": "PPC ttc"
+      },
+      "match": "FR21524038817",
+      "size_system": "US",
+      "size_chart": "Chaussures",
+      "notes": "Pas de colonne Qté : grille « Taille: / Quantité: » sous chaque article, une ligne par pointure. Identifiant = n° de TVA d'Encore"
+    }
   ]
 }

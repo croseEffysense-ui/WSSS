@@ -42,7 +42,7 @@ shopify-invoice-converter/
 │   ├── storage.py                  # Backends de config : JSON local / Google Sheets (gspread)
 │   ├── logs.py                     # Journalisation : console + fichier + tampon mémoire, masquage des secrets
 │   ├── diagnostics.py              # Diagnostic pas à pas de la connexion Google Sheets (pur)
-│   ├── diagnostics_ui.py           # Fenêtre Streamlit « Diagnostic & journal »
+│   ├── diagnostics_ui.py           # Diagnostic & journal (Paramètres ⚙️ → Base de donnée Sheet)
 │   ├── config_ui.py                # Fenêtre d'édition de la config + validations
 │   ├── models.py                   # LineItem + conversions DataFrame <-> objets
 │   ├── pdf_parser.py               # PDF -> lignes articles
@@ -68,7 +68,7 @@ shopify-invoice-converter/
 ### `app.py` — Interface et orchestration
 - **Rôle** : seul fichier qui parle à l'utilisateur. Il enchaîne les modules, ne contient **aucune règle métier**.
 - **Contenu clé** :
-  - Barre latérale : prix de secours (coef/TVA) et template optionnel dans des volets repliables, **indicateur de santé de la config** (`config_health`), bouton 🛠️ qui ouvre `config_dialog()`, aide courte.
+  - Pas de barre latérale : bouton **Paramètres ⚙️** (en haut à droite) → onglets Général (debug, prix de secours, template), Diagnostic configuration (`config_health`), Base de donnée Sheet, Configuration application, bouton 🛠️ qui ouvre `config_dialog()`, aide courte.
   - `_init_store()` (`@st.cache_resource`) : lit les secrets, appelle `build_store`, retourne `(store, erreur)` ; en cas d'erreur l'app **bascule sur les JSON locaux** et affiche le message. Bloc « Base de configuration » dans la barre latérale (source active, lien, 🔄 Recharger).
   - Chargement de la config (`load_json` ×3 + `template_columns`) avec arrêt propre (`st.stop()`) si invalide.
   - `_read_text` (mise en cache) et `_parse_document(bytes, choix)` : lecture du PDF puis **détection automatique du format** (`AUTO`) ou profil imposé.
@@ -79,7 +79,7 @@ shopify-invoice-converter/
 - **Rôle** : point unique pour les constantes et l'accès à la config, quel que soit le backend.
 - **Contenu clé** :
   - Constantes métier : `TAG_NEW` (`nouveautés`), `WEIGHT_NORMAL_G` (500), `WEIGHT_DECK_G` (1000), `WEIGHT_UNIT` (`kg`).
-  - `config_health(rules, mapping, collections, formats=None)` : liste des points de configuration à compléter (affichée dans la barre latérale) ; contrôle aussi les formats fournisseurs si `formats` est fourni.
+  - `config_health(rules, mapping, collections, formats=None)` : liste des points de configuration à compléter (affichée dans Paramètres ⚙️ → Diagnostic configuration) ; contrôle aussi les formats fournisseurs si `formats` est fourni.
   - `load_profiles()` : formats fournisseurs enregistrés → `({nom: liste ordonnée des champs numériques}, problèmes)`. **C'est ce qui adapte le parseur à la facture d'un fournisseur.** Les formats invalides sont ignorés et signalés, pas bloquants.
   - `set_store` / `get_store` : backend actif (par défaut `LocalJsonStore(CONFIG_DIR)`). `load_json(name)` / `save_json(name, data)` **délèguent** au backend : le reste du code ne sait pas d'où vient la config.
   - `template_columns(uploaded=None)` : colonnes du template (upload > `data/product_template.csv`), ordre conservé.
@@ -276,7 +276,7 @@ Bouton 🛠️ → `config_dialog()` → édition → validation (`validate_*`) 
 ### ⚠️ Composants qui risquent de devenir complexes
 | Zone | Risque | Conseil |
 |---|---|---|
-| `pdf_parser._parse_block` | Heuristiques sur la queue numérique ; chaque nouveau format fournisseur tente d'y ajouter des cas | Préférer un **nouveau format fournisseur** (🛠️ → *Formats fournisseurs*). Si les cas divergent trop, scinder en un parseur par fournisseur derrière une même fonction `parse_pdf`. |
+| `pdf_parser._parse_block` | Heuristiques sur la queue numérique ; chaque nouveau format fournisseur tente d'y ajouter des cas | Préférer un **nouveau format fournisseur** (Paramètres ⚙️ → Configuration application → *Modèles de facture*). Si les cas divergent trop, scinder en un parseur par fournisseur derrière une même fonction `parse_pdf`. |
 | `normalizer.normalize_item` | Fonction longue (marque, type, options, titre, prix, tags) | La découper par `kind` (une fonction par type de produit) dès qu'une règle de plus s'ajoute. |
 | Regex de tailles/largeurs/roues | Faux positifs (un « M » ou un « 8 » dans une désignation) | Ajouter un test par cas réel rencontré avant de modifier la regex. |
 | `storage.py` | Deux représentations de la même config (JSON / onglets) à garder synchrones ; dernier enregistrement gagnant ; dépend d'un service externe | Toute évolution du schéma = `SHEET_SCHEMAS` + `sheets_to_doc` + `doc_to_sheets` + test d'aller-retour (`test_sheets_seed_and_roundtrip_equals_local`). |
@@ -292,7 +292,7 @@ Bouton 🛠️ → `config_dialog()` → édition → validation (`validate_*`) 
 5. **Mettre à jour la doc** (`README.md` / ce fichier) et committer.
 
 ### Exemples de recettes
-- **Nouveau fournisseur / format de facture** : 🛠️ → *Formats fournisseurs* → ajouter une ligne (nom + colonnes numériques dans l'ordre de lecture) → il apparaît dans la liste « Format fournisseur » et dans la détection automatique, sans toucher au code, si les SKU respectent `AAA-BBB-1234`. Sinon, assouplir `SKU_RE` avec un test dédié.
+- **Nouveau fournisseur / format de facture** : Paramètres ⚙️ → Configuration application → *Modèles de facture* → ajouter une ligne (nom + colonnes numériques dans l'ordre de lecture) → il apparaît dans la liste « Format fournisseur » et dans la détection automatique, sans toucher au code, si les SKU respectent `AAA-BBB-1234`. Sinon, assouplir `SKU_RE` avec un test dédié.
 - **Nouveau type de produit** : 🛠️ → *Types de produit* (mots-clés, `type_key`, `kind`, libellé) → compléter le *Mapping* → c'est tout. Un nouveau **`kind`** (comportement d'options inédit) exige en plus : l'ajouter à `config_ui.KINDS` et une branche dans `normalizer.normalize_item`.
 - **Nouvelle colonne Shopify à remplir** : ajouter la clé dans le dictionnaire `values` de `build_dataframe` (le nom doit être **exactement** celui du template, sinon elle est ignorée), et le champ correspondant dans `Product` si la valeur vient des règles.
 - **Changer une valeur fixe** (poids, tag, statut) : constante dans `config.py` (poids, tag) ou `build_dataframe` (statut, etc.).
@@ -335,7 +335,7 @@ pytest -q
 ```
 
 ### Premier paramétrage (à faire une fois)
-1. 🛠️ **Gérer la configuration** → *Mapping Product Type* : renseigner les valeurs exactes de vos Product Types (seul `wallet → Porte Feuille` est prérempli).
+1. **Paramètres ⚙️** → Configuration application → *5 · Type Shopify* : renseigner les valeurs exactes de vos Product Types (seul `wallet → Porte Feuille` est prérempli).
 2. *Collections* : saisir la liste blanche si besoin.
 3. *Marques / Couleurs / Types* : compléter avec vos données réelles.
 4. Tester avec un PDF **anonymisé** ; ajuster le profil de colonnes ou corriger dans le tableau.
