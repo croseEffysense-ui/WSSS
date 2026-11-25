@@ -16,7 +16,7 @@ def consolidate(products: list[Product]) -> list[Product]:
         key = (p.handle, p.sku, p.option1_value, p.option2_value)
         if key in merged:
             merged[key].qty += p.qty
-            merged[key].warnings.append("Lignes identiques consolidées")
+            merged[key].warnings.append("Lignes identiques additionnées (même référence, même taille) : vérifiez que ce n'est pas un doublon de la facture")
         else:
             merged[key] = p
     return list(merged.values())

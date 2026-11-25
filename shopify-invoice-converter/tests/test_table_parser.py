@@ -19,7 +19,7 @@ def L(page, top, *cols, h=8.0):
 
 # Facture « type Adidas » : 11 colonnes, en-tête sur 3 lignes, tailles « 40 / 1 » parasites, nombres alignés à droite
 ADIDAS = [
-    L(1, 10, ("FACTURE adidas France", 300)),
+    L(1, 10, ("FACTURE adidas France FR58085480069", 300)),
     L(1, 154, ("Numéro", 60), ("Quantité", 294), ("Prix", 487), ("Remise", 532)),
     L(1, 159, ("Position", 17), ("Description de l'Article", 155), ("Taille / Quantité", 371), ("Prix Net", 581),
       ("Montant Net", 630), ("Montant TVA", 700), ("Montant Total", 770)),

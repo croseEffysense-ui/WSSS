@@ -60,7 +60,7 @@ def test_build_csv_grouping_and_rules():
     assert set(tee["Option1 name"]) == {"Taille"} and list(tee["Option1 value"]) == ["M", "L"]
     assert df["Tags"].iloc[0] == "nouveautés" and df["Published on online store"].iloc[0] == "FALSE"
     wheel = df[df["Option1 name"] == "Dureté"].iloc[0]
-    assert wheel["Option2 value"] == "56mm" and wheel["Title"].endswith("99D - 56mm")
+    assert wheel["Option2 value"] == "56mm" and wheel["Title"].endswith("56MM - 99D")
     wallet = df[df["Vendor"] == "DGK"].iloc[1]
     assert wallet["Type"] == "Porte Feuille" and wallet["Option1 name"] == ""
 
@@ -155,10 +155,10 @@ def test_title_has_no_duplicated_type_keyword():
     from converter.models import LineItem
     p = normalize_item(LineItem(sku="DGK-WAL-0001", description="DGK Wallet Brown", qty=1, unit_price_net=15, public_price=39.9),
                        RULES, MAPPING, COLL, 2.4, 20)
-    assert p.title == "DGK Wallet - Brown"
+    assert p.title == "DGK - Wallet - Brown"
     p = normalize_item(LineItem(sku="SPI-WHE-0100", description="Spitfire Wheels Conical Full Wallstreet 99D 56mm", qty=4, unit_price_net=25),
                        RULES, MAPPING, COLL, 2.4, 20)
-    assert p.title == "Spitfire Wheels - Conical Full Wallstreet - 99D - 56mm"
+    assert p.title == "Spitfire Wheels - Conical Full Wallstreet - 56MM - 99D"
 
 
 # ----------------------------- Stockage Google Sheets (passerelle simulée) -----------------------------

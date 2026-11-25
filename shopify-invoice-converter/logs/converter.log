@@ -2563,3 +2563,12 @@ Heure locale UTC : 2026-11-06 16:20:17
 17:20:38 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
 17:20:50 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
 17:20:50 | INFO    | converter.app | Secrets Streamlit lus : sections []
+18:43:57 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+18:43:57 | INFO    | converter.app | Secrets Streamlit lus : sections []
+18:43:57 | INFO    | converter.storage | Choix du backend de config · forcé local=False · compte de service=absent · sheet=absent
+18:43:57 | INFO    | converter.storage | Google Sheets non configuré (ni secrets ni variables d'environnement) : mode fichiers JSON locaux
+18:43:57 | INFO    | converter.app | Backend de configuration actif : Fichiers JSON locaux (config/)
+15:29:20 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+15:29:20 | INFO    | converter.app | Secrets Streamlit lus : sections []
+16:08:45 | INFO    | converter.app | Aucun fichier secrets.toml trouvé (mode local si aucune variable d'environnement)
+16:08:45 | INFO    | converter.app | Secrets Streamlit lus : sections []

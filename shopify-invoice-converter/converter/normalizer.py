@@ -11,7 +11,8 @@ from .models import LineItem
 from .sizes import Charts, convert_size
 
 SIZE_SINGLE_RE = re.compile(r"^(\d)?(XXS|XS|XXL|XL|S|M|L)$", re.I)  # 2M, 3L, 4XL -> M, L, XL
-SIZE_COMPOUND_RE = re.compile(r"^(XS/S|S/M|M/L|L/XL|XL/XXL)$", re.I)  # conservés tels quels
+SIZE_COMPOUND_RE = re.compile(r"^(JR/XS|XS/S|S/M|M/L|L/XL|XL/XXL)$", re.I)  # conservés tels quels
+EU_SIZE_RE = re.compile(r"(?<![A-Za-z0-9])((?:3[4-9]|4[0-9])(?:[.,]5)?)\s*EU(?![A-Za-z0-9])", re.I)  # « 42 EU » : pointure européenne
 NUMERIC_SIZE_RE = re.compile(r"^(2[6-9]|3\d|4[0-6])$")
 SHOE_CODE_RE = re.compile(r"^([MW])0?(\d{1,2}(?:[.,]5)?)$", re.I)  # pointures codées : M08 -> 8, M09.5 -> 9.5, W07 -> W7
 DECK_WIDTH_RE = re.compile(r"^([6-9](?:[.,]\d{1,3})?)(?:\"|''|in)?$")
@@ -193,7 +194,8 @@ def normalize_item(
     if not brand and default_vendor:
         brand = default_vendor
     elif not brand:
-        warnings.append("Marque non reconnue (Vendor vide)")
+        warnings.append(("Marque non reconnue : le champ Vendor sera vide. Ajoutez la marque dans Paramètres ⚙️ → Configuration application → « 1 · Marques » "
+                         "(onglet brands du Sheet), ou renseignez la « marque par défaut » du modèle fournisseur. Vous pouvez aussi la choisir à l'étape 3."))
 
     rule, remaining = detect_type(remaining, rules["product_types"])
     if rule is None and default_type:
@@ -202,10 +204,13 @@ def normalize_item(
     type_key = rule["type_key"] if rule else ""
     label = rule["label"] if rule else ""
     if not rule:
-        warnings.append("Type de produit non reconnu")
+        warnings.append(("Type de produit non reconnu : aucun mot-clé de « 2 · Types de produit » (onglet product_types) n'apparaît dans la désignation. "
+                     "Ajoutez le mot qui désigne ce produit (ex. « hoodie ») à la bonne ligne, ou choisissez le Type à l'étape 3."))
     product_type = type_mapping.get(type_key, "") if type_key else ""
     if rule and not product_type:
-        warnings.append(f"Pas de correspondance Product Type pour « {type_key} »")
+        warnings.append((f"Type Shopify vide : le produit est reconnu comme « {label or type_key} » (clé interne « {type_key} »), mais la table "
+                       f"« 5 · Type Shopify » (onglet type_mapping) n'a pas de valeur pour « {type_key} ». Saisissez-y le nom EXACT du Product Type "
+                       "de votre boutique (ex. « Chaussures »), ou choisissez-le à l'étape 3."))
 
     tokens = remaining.split()
     opt = {"n1": "", "v1": "", "n2": "", "v2": ""}
@@ -217,21 +222,28 @@ def normalize_item(
         tokens = _clean(re.sub(r"(?<![A-Za-z0-9])[xX]\s*\d{2}(?:[.,]\d+)?(?:\"|in)?(?![A-Za-z0-9])", " ", " ".join(tokens))).split()
         if width:
             w = deck_width(DECK_WIDTH_RE.match(width).group(1))
-            opt.update(n1="Largeur", v1=w)
-            tail_parts.append(w)
+            opt.update(n1="Largeur", v1=w)  # la largeur est une variante : plus dans le titre
         else:
-            warnings.append("Largeur de deck non détectée")
+            warnings.append("Largeur de planche non trouvée dans la désignation (ex. 8.25) : complétez l'option Largeur à l'étape 3.")
+        color, rest = detect_color(" ".join(tokens), rules.get("colors", []))
+        if color:
+            tokens = rest.split()
+            tail_parts.append(color)
     elif kind == "wheel":
         hard = _pop_token(tokens, lambda t: bool(WHEEL_HARDNESS_RE.match(t)))
         diam = _pop_token(tokens, lambda t: bool(WHEEL_DIAMETER_RE.match(t)))
         if hard and diam:
             opt.update(n1="Dureté", v1=hard.upper(), n2="Diamètre", v2=diam.lower())
-            tail_parts += [hard.upper(), diam.lower()]
+            tail_parts += [diam.upper(), hard.upper()]  # titre : DIAMÈTRE puis DURETÉ (ex. 52MM - 95A)
         else:
-            warnings.append("Dureté / diamètre de roue non détectés")
+            warnings.append("Dureté ou diamètre de roue non trouvés dans la désignation (ex. 52MM 99A) : complétez les options à l'étape 3.")
     else:
+        eu = EU_SIZE_RE.search(" ".join(tokens)) if not item.size else None
         if item.size:  # taille donnée par la facture (colonne « Taille / Quantité ») : pas de devinette
             opt.update(n1="Taille", v1=item.size)
+        elif eu:  # « Slides Mens Drift 42 EU » : la pointure est une variante, pas une partie du nom
+            opt.update(n1="Taille", v1=f"{eu.group(1)} EU")
+            tokens = _clean(EU_SIZE_RE.sub(" ", " ".join(tokens), count=1)).split()
         else:
             numeric_ok = kind in rules.get("sized_numeric_kinds", [])
             size_tok = _pop_token(
@@ -254,14 +266,19 @@ def normalize_item(
     if core.isupper():
         core = core.title()
     if not core:
-        warnings.append("Nom de l'article absent de la désignation (titre sans nom)")
+        warnings.append("Titre sans nom d'article : la désignation ne contient que la marque, le type et la couleur. Complétez le nom à l'étape 2 (colonne Description).")
 
-    head = " ".join(p for p in (brand, label) if p)
-    title = " - ".join(p for p in (head, core, " - ".join(tail_parts)) if p)
+    # Titres : roues « MARQUE Wheels - Nom - DIAMÈTRE - DURETÉ » ; planches « MARQUE Board - Nom - Couleur » ;
+    # tous les autres « MARQUE - Type - Nom - Couleur ».
+    if kind in ("wheel", "deck"):
+        head = [" ".join(p for p in (brand, label or ("Wheels" if kind == "wheel" else "Board")) if p)]
+    else:
+        head = [p for p in (brand, label) if p]
+    title = " - ".join([*head, *(p for p in (core, *tail_parts) if p)])
 
     cost = item.unit_price_net if item.unit_price_net is not None else item.unit_price_gross
     if cost is None:
-        warnings.append("Coût absent")
+        warnings.append("Coût absent : aucun prix d'achat lu sur cette ligne. Corrigez-le à l'étape 2 (colonne PU Net ou PU HT).")
     if item.public_price is not None:
         price = round(item.public_price, 2)
     elif fallback_price and cost is not None:
@@ -269,7 +286,8 @@ def normalize_item(
         warnings.append("Prix public absent : prix calculé (coût × coef × TVA)")
     else:
         price = None
-        warnings.append("Prix public absent de la facture : prix de vente laissé vide")
+        warnings.append(("Prix de vente laissé vide : la facture n'indique pas de prix public TTC. Saisissez-le à l'étape 2 (colonne « Prix public TTC »), "
+                         "ou à l'étape 3 (colonne Price). Option : activer le prix calculé dans Paramètres."))
 
     tags, tag_warnings = product_tags(type_key, brand, collections)
     warnings += tag_warnings

@@ -1,5 +1,5 @@
 {
-  "_comment": "Formats de factures / BL par fournisseur. Deux sortes : (1) table = modèle par en-têtes {champ: en-tête de colonne sur la facture} (clés : sku, description, qty, unit_price_gross, unit_price_net, total, public_price) + match = texte qui identifie le fournisseur ; (2) columns = colonnes numériques en fin de ligne article, de gauche à droite. Renommez ces exemples au nom de vos fournisseurs.",
+  "_comment": "Formats de factures / BL par fournisseur. Deux sortes : (1) table = modèle par en-têtes {champ: en-tête de colonne sur la facture} (clés : sku, description, qty, unit_price_gross, unit_price_net, total, public_price) + match = texte qui identifie le fournisseur ; (2) columns = colonnes numériques en fin de ligne article, de gauche à droite. Renommez ces exemples au nom de vos fournisseurs. Convention : `match` = n° de TVA du fournisseur (pas celui de Wall Street).",
   "formats": [
     {
       "name": "Adidas",
@@ -12,7 +12,7 @@
         "total": "Montant Net",
         "sizes": "Taille / Quantité"
       },
-      "match": "adidas France",
+      "match": "FR58085480069",
       "default_vendor": "Adidas",
       "default_type": "shoes",
       "notes": "Facture 11 colonnes ; une ligne par pointure (3913 = 39 1/3) ; Remise, Montant TVA… ignorées"
@@ -34,14 +34,27 @@
     },
     {
       "name": "Carhartt WIP",
-      "table": {"sku": "No. Article", "description": "Désignation", "qty": "Quantité", "unit_price_gross": "Prix", "total": "Total"},
-      "match": "carhartt-wip.com",
+      "table": {
+        "sku": "No. Article",
+        "description": "Désignation",
+        "qty": "Quantité",
+        "unit_price_gross": "Prix",
+        "total": "Total"
+      },
+      "match": "DE160705175",
       "default_vendor": "Carhartt WIP",
       "notes": "Remise par ligne : PU Net = Total ÷ Qté. Le fournisseur est la marque."
     },
     {
       "name": "Vans (VF France)",
-      "table": {"sku": "Article", "description": "Description/Reférenc-", "qty": "Quantité", "unit_price_gross": "Prix/pc.", "unit_price_net": "Prix/pc. net", "total": "Mont charg. incl. TVA"},
+      "table": {
+        "sku": "Article",
+        "description": "Description/Reférenc-",
+        "qty": "Quantité",
+        "unit_price_gross": "Prix/pc.",
+        "unit_price_net": "Prix/pc. net",
+        "total": "Mont charg. incl. TVA"
+      },
       "match": "FR78353238520",
       "default_vendor": "Vans",
       "default_type": "shoes",
@@ -49,10 +62,39 @@
     },
     {
       "name": "VPM",
-      "table": {"description": "Product / Service", "qty": "Quantity", "unit_price_gross": "Price", "total": "Total"},
+      "table": {
+        "description": "Product / Service",
+        "qty": "Quantity",
+        "unit_price_gross": "Price",
+        "total": "Total"
+      },
       "match": "FR30983268830",
       "default_type": "shoes",
       "notes": "SKU dans la désignation (« SKU: F11000410 ») ; pointures codées M08 = 8. Marque non écrite sur la facture : à compléter si besoin."
+    },
+    {
+      "name": "Santa Cruz (Shiner)",
+      "table": {
+        "sku": "Code",
+        "description": "Description",
+        "qty": "Qty",
+        "unit_price_gross": "Price",
+        "total": "Total"
+      },
+      "match": "GB137 5548 50",
+      "notes": "Facture de Shiner (UK) : plusieurs marques (Santa Cruz, Triple Eight, Eight Ball…) lues dans la désignation. Lignes « Delivery Charge » ignorées. Identifiant = n° de TVA de Shiner"
+    },
+    {
+      "name": "V7",
+      "table": {
+        "sku": "Réf.",
+        "description": "Désignation",
+        "qty": "Qté liv",
+        "unit_price_net": "Prix Net",
+        "total": "Montant HT"
+      },
+      "match": "FR55403419393",
+      "notes": "V7 Distribution (Boissy-Saint-Léger) : plusieurs marques lues dans la désignation. Identifiant = n° de TVA de V7 (coupé sur 2 lignes dans le PDF : retrouvé par le SIREN 403 419 393)"
     }
   ]
 }

@@ -32,13 +32,17 @@ def norm(description, **kw):
 
 
 def test_titles_follow_brand_type_name_color_format():
-    assert norm("Obey Woven Shirt Alan Woven Sky Multi").title == "Obey Chemise - Alan Woven - Sky Multi"
-    assert norm("Spitfire Wheels Conical Full Wallstreet 99D 56mm").title == "Spitfire Wheels - Conical Full Wallstreet - 99D - 56mm"
-    assert norm("Etnies Shoes Kingpin Black Dirty Wash").title == "Etnies - Kingpin - Black Dirty Wash"
-    assert norm("Baker Board Stop And Think 8.5").title == "Baker Board - Stop And Think - 8.5"
+    # autres types : MARQUE - Type - Nom - Couleur
+    assert norm("Obey Woven Shirt Alan Woven Sky Multi").title == "Obey - Chemise - Alan Woven - Sky Multi"
+    # roues : MARQUE Wheels - Nom - DIAMÈTRE - DURETÉ (les options Shopify gardent « 56mm » / « 99D »)
+    assert norm("Spitfire Wheels Conical Full Wallstreet 99D 56mm").title == "Spitfire Wheels - Conical Full Wallstreet - 56MM - 99D"
+    assert norm("Etnies Shoes Kingpin Black Dirty Wash").title == "Etnies - Kingpin - Black Dirty Wash"  # libellé de type vide : omis
+    # planches : MARQUE Board - Nom - Couleur (la largeur n'est qu'une option)
+    assert norm("Baker Board Stop And Think 8.5").title == "Baker Board - Stop And Think"
+    assert norm("Baker Board Stop And Think Black 8.5").title == "Baker Board - Stop And Think - Black"
     # mots parasites et mot-clé du type répété retirés : « T-Shirt(EU) … T-Shirt … ADULT »
     p = norm("Santa Cruz T-Shirt(EU) Burnt Opus OVRSZD T-Shirt Black XS ADULT")
-    assert p.title == "Santa Cruz T-Shirt - Burnt Opus OVRSZD - Black" and p.option1_value == "XS"
+    assert p.title == "Santa Cruz - T-Shirt - Burnt Opus OVRSZD - Black" and p.option1_value == "XS"
 
 
 def test_board_width_variant_rounding():
@@ -76,7 +80,7 @@ def test_wasted_paris_multi_variant_csv_rows():
     items.append(LineItem(sku="WP-TEE-1", description="Wasted Paris T-Shirt - Skive - Black M", qty=2, unit_price_net=12.0, public_price=35.0))
     df = build_dataframe([normalize_item(i, RULES, MAPPING, COLL, 2.4, 20) for i in items], template_columns())
     assert len(df) == 4 and set(df["URL handle"]) == {"wasted-paris-t-shirt-skive-black"}
-    assert list(df["Title"]) == ["Wasted Paris T-Shirt - Skive - Black", "", "", ""]
+    assert list(df["Title"]) == ["Wasted Paris - T-Shirt - Skive - Black", "", "", ""]
     assert list(df["Option1 name"]) == ["Taille"] * 4 and list(df["Option1 value"]) == ["XS", "S", "M", "L"]
     assert list(df["Inventory quantity"]) == [1, 2, 5, 1]  # même SKU + même taille : quantités additionnées
     assert set(df["SKU"]) == {"WP-TEE-1"} and df["Status"].iloc[0] == "active"
@@ -117,3 +121,52 @@ def test_sheets_roundtrip_brand_collections_and_title_ignore():
     assert sheets_to_doc("collections.json", sheets) == coll
     rules = {"brands": ["X"], "colors": [], "product_types": [], "sized_numeric_kinds": ["apparel"], "title_ignore": ["(EU)"]}
     assert sheets_to_doc("product_rules.json", doc_to_sheets("product_rules.json", rules)) == rules
+
+
+def test_board_title_has_color_but_width_is_only_a_variant():
+    p = norm("Baker Board Stop And Think Black 8.5")
+    assert p.title == "Baker Board - Stop And Think - Black" and (p.option1_name, p.option1_value) == ("Largeur", "8.5")
+    a, b = norm("Baker Board Stop And Think Black 8.0"), norm("Baker Board Stop And Think Black 8.5")
+    assert a.handle == b.handle  # même planche, deux largeurs = un produit à deux variantes
+
+
+def test_wheels_title_diameter_then_hardness_uppercase_options_unchanged():
+    p = norm("Spitfire Wheels Easy Formula 95A 52mm")
+    assert p.title == "Spitfire Wheels - Easy Formula - 52MM - 95A"
+    assert (p.option1_name, p.option1_value, p.option2_name, p.option2_value) == ("Dureté", "95A", "Diamètre", "52mm")
+
+
+def test_eu_shoe_size_in_designation_becomes_variant():
+    a, b = norm("Santa Cruz Slides Mens Drift 42 EU"), norm("Santa Cruz Slides Mens Drift 43 EU")
+    assert a.option1_name == "Taille" and (a.option1_value, b.option1_value) == ("42", "43")
+    assert a.handle == b.handle and "EU" not in a.title and "42" not in a.title
+
+
+def test_junior_compound_size_recognised():
+    rules = {**RULES, "brands": ["Eight Ball"], "product_types": [{"keywords": ["helmet"], "type_key": "helmet", "kind": "other", "label": "Helmet"}]}
+    item = LineItem(sku="X", description="Eight Ball Helmet Fit Dial Matte JR/XS Black", qty=1, unit_price_net=10)
+    p = normalize_item(item, rules, MAPPING, COLL, 2.4, 20)
+    assert p.option1_value == "JR/XS" and p.title == "Eight Ball - Helmet - Fit Dial Matte - Black"
+
+
+def test_delivery_and_shipping_lines_are_not_products():
+    from converter.analysis import drop_non_product_lines
+    items = [LineItem(sku=s, description=d, qty=1) for s, d in
+             (("A-B-1", "Hoodie Dot"), ("DEL-EUB-0500", "Delivery Charge Non UK Over £425 (500)"), ("SHP", "Shipment"),
+              ("C-D-2", "Delivery Bag Black"), ("F", "Frais de port"))]
+    kept, dropped = drop_non_product_lines(items)
+    assert [i.sku for i in kept] == ["A-B-1", "C-D-2"]  # « Delivery Bag Black » est un vrai produit
+    assert "Delivery Charge Non UK Over £425 (500)" in dropped and "Shipment" in dropped and "Frais de port" in dropped
+
+
+def test_supplier_vat_matching_tolerates_pdf_layout():
+    from converter.formats import supplier_in_text
+    assert supplier_in_text("GB137 5548 50", "VAT  Reg. No.: GB137  5548  50")  # espaces irréguliers
+    assert supplier_in_text("GB137554850", "VAT Reg. No.: GB137 5548 50")
+    # TVA française coupée sur deux lignes par la mise en page : retrouvée par son SIREN
+    assert supplier_in_text("FR55403419393", "TVA Intracommunautaire : FR 55\n94470 BOISSY  403 419 393")
+    assert supplier_in_text("DE160705175", "Willem Kampert No. TVA : DE160705175")
+    assert supplier_in_text("adidas France", "ADIDAS FRANCE sarl")
+    # pas de faux positifs : le n° de TVA du CLIENT ou un autre fournisseur ne reconnaît pas ce modèle
+    assert not supplier_in_text("FR55403419393", "No. TVA FR71419568217 (Wall Street)")
+    assert not supplier_in_text("GB137 5548 50", "VAT GB999 1234 56") and not supplier_in_text("", "texte")

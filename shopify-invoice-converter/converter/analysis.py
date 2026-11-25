@@ -14,7 +14,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
-from .formats import FIELD_LABELS, TABLE_FIELDS, normalize_label
+from .formats import FIELD_LABELS, TABLE_FIELDS, normalize_label, supplier_in_text
 from .models import LineItem
 from .pdf_parser import PdfExtractionError, extract_text, parse_text
 from .table_parser import Line, TableTrace, extract_pages, pages_text, parse_pages
@@ -32,6 +32,23 @@ DECLARED_UNITS_RE = re.compile(
     r"|quantit[ée]\s+totale(?:\s+livr[ée]e)?)\s*:?\s*(\d{1,6})(?![\d.,])",
     re.I,
 )
+
+
+# Lignes de frais portées par la facture (« Delivery Charge Non UK Over £425 ») : jamais des produits Shopify
+NON_PRODUCT_RE = re.compile(
+    r"^\s*(?:"
+    r"(?:delivery|shipping|shipment|carriage|freight|postage|handling)\s+(?:charges?|costs?|fees?|&\s*handling|and\s+handling)\b"  # « Delivery Charge … »
+    r"|(?:delivery|shipping|shipment|carriage|freight|postage|handling|transport|livraison)\s*$"  # le mot seul : « Shipment »
+    r"|frais\s+(?:de\s+)?(?:port|livraison|transport|exp[ée]dition)\b|port\s+et\s+emballage\b"
+    r")",
+    re.I,
+)
+
+
+def drop_non_product_lines(items: list[LineItem]) -> tuple[list[LineItem], list[str]]:
+    """(lignes sans les frais de port/livraison, descriptions retirées)."""
+    kept = [i for i in items if not NON_PRODUCT_RE.match(i.description or "")]
+    return kept, [i.description for i in items if NON_PRODUCT_RE.match(i.description or "")]
 
 
 def declared_units(text: str) -> Optional[int]:
@@ -129,12 +146,19 @@ def analyze(
     if a.pages:
         for name, tpl in templates.items():
             items, trace = parse_pages(a.pages, tpl["table"])
-            match = bool(tpl.get("match")) and normalize_label(tpl["match"]) in norm_text
+            match = bool(tpl.get("match")) and supplier_in_text(tpl["match"], a.text)
             a.candidates.append(Candidate(name, METHOD_TEMPLATE, items, trace, supplier_match=match))
         items, trace = parse_pages(a.pages)
         a.candidates.append(Candidate(AUTO_TABLE, METHOD_AUTO_TABLE, items, trace))
     for name, columns in profiles.items():
         a.candidates.append(Candidate(name, METHOD_TAIL, parse_text(a.text, columns), columns=columns))
+
+    skipped: list[str] = []
+    for c in a.candidates:
+        c.items, dropped = drop_non_product_lines(c.items)
+        skipped = skipped or dropped
+    if skipped:
+        a.notes.append(f"{len(skipped)} ligne(s) de frais ignorée(s) (pas des produits) : " + " ; ".join(skipped))
 
     if choice == AUTO:
         pool = [c for c in a.candidates if c.items]

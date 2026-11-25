@@ -1,6 +1,7 @@
 """Interface Streamlit : conversion facture/BL -> CSV Shopify + rapprochement PO/BL."""
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 from datetime import date
@@ -18,6 +19,7 @@ from converter.logs import setup_logging
 from converter.models import LineItem, df_to_items, items_to_df
 from converter.normalizer import normalize_item
 from converter.pdf_parser import PdfExtractionError
+from converter.preview_edit import DISABLED_COLUMNS, SELECT_COLUMNS, dropdown_options, from_editable, to_editable
 from converter.reconciliation import STATUS_OK, reconcile
 from converter.shopify_builder import build_dataframe
 from converter.sizes import DOC_SIZES, SIZE_SYSTEMS, chart_names, charts_from_doc
@@ -379,20 +381,58 @@ def render_convert() -> None:
         st.error(f"🔢 Écart de quantité : {units} unités lues, la facture en annonce {declared}. Vérifiez les lignes.")
 
     if issues:
-        with st.expander(f"⚠️ {len(issues)} alerte(s) à vérifier", expanded=len(issues) <= 15):
-            st.dataframe(pd.DataFrame(issues), width="stretch", hide_index=True)
+        grouped: dict[str, list[str]] = {}
+        for i in issues:
+            grouped.setdefault(i["Alerte"], []).append(i["SKU"])
+        with st.expander(f"⚠️ {len(issues)} alerte(s) à vérifier ({len(grouped)} cause(s) différente(s))", expanded=True):
+            st.caption("Chaque cause est listée une seule fois, avec les produits concernés et ce qu'il faut faire.")
+            for msg, skus in grouped.items():
+                shown = ", ".join(dict.fromkeys(skus))
+                st.warning(f"{msg}\n\n**Produits concernés ({len(skus)})** : {shown}")
 
     st.subheader("Étape 3 · Téléchargez le CSV")
     show_all = st.toggle(f"Afficher les {len(columns)} colonnes du template", value=False)
-    preview = df if show_all else df[[c for c in PREVIEW_COLUMNS if c in df.columns]]
-    st.dataframe(preview, width="stretch", hide_index=True)
-    # Type obligatoire : un produit sans Type doit être signalé AVANT de générer le CSV
-    untyped = sorted({p.title for p in products if not p.product_type})
+    st.caption(
+        "✏️ Cliquez sur une cellule pour la modifier : les listes déroulantes (marque, type, tags, options, statut…) "
+        "viennent de la configuration. Le CSV téléchargé reprend vos modifications. "
+        "Si vous changez l'étape 2, les modifications de cette étape sont réinitialisées."
+    )
+    opts = dropdown_options(df, rules, type_mapping, collections, size_charts)
+    cfg: dict = {c: st.column_config.TextColumn(c) for c in df.columns}
+    for col in SELECT_COLUMNS:
+        if col in df.columns:
+            cfg[col] = st.column_config.SelectboxColumn(col, options=opts[col], width="medium" if col in ("Vendor", "Type") else "small")
+    if "Tags" in df.columns:
+        cfg["Tags"] = st.column_config.MultiselectColumn("Tags", options=opts["Tags"], width="large")
+    for col in ("Price", "Cost per item"):
+        if col in df.columns:
+            cfg[col] = st.column_config.NumberColumn(col, min_value=0, step=0.01, format="%.2f")
+    for col in ("Inventory quantity", "Weight value (grams)"):
+        if col in df.columns:
+            cfg[col] = st.column_config.NumberColumn(col, min_value=0, step=1, format="%d")
+    if "Title" in df.columns:
+        cfg["Title"] = st.column_config.TextColumn("Title", width="large")
+    base_hash = hashlib.md5(df.to_csv(index=False).encode("utf-8")).hexdigest()
+    edited_df = st.data_editor(
+        to_editable(df),
+        width="stretch",
+        hide_index=True,
+        num_rows="fixed",
+        disabled=[c for c in DISABLED_COLUMNS if c in df.columns],
+        column_order=list(df.columns) if show_all else [c for c in PREVIEW_COLUMNS if c in df.columns],
+        column_config=cfg,
+        key=f"preview-{pdf.name}-{pdf.size}-{base_hash}",
+    )
+    df = from_editable(edited_df, list(df.columns))
+    # Type obligatoire : un produit sans Type doit être signalé AVANT de générer le CSV (Type éventuellement modifié ci-dessus)
+    first_rows = df[df["Title"].astype(str).str.strip() != ""] if "Title" in df.columns else df.iloc[0:0]
+    untyped = sorted(set(first_rows.loc[first_rows["Type"].astype(str).str.strip() == "", "Title"])) if "Type" in df.columns else []
     confirmed = True
     if untyped:
         st.warning(
-            f"**{len(untyped)} produit(s) sans Type Shopify** : complétez « 2 · Types de produit » et « 5 · Type Shopify » "
-            "(Paramètres ⚙️ → Configuration application), ou confirmez pour télécharger quand même."
+            f"**{len(untyped)} produit(s) sans Type Shopify** : choisissez un Type dans le tableau ci-dessus, complétez "
+            "« 2 · Types de produit » et « 5 · Type Shopify » (Paramètres ⚙️ → Configuration application), "
+            "ou confirmez pour télécharger quand même."
         )
         with st.expander("Voir les produits sans Type"):
             st.markdown("\n".join(f"- {t}" for t in untyped))

@@ -10,7 +10,7 @@ import streamlit as st
 
 from .analysis import METHOD_TAIL, METHOD_TEMPLATE, Analysis
 from .config import load_json, save_json
-from .formats import TABLE_FIELDS, upsert_template, validate_table
+from .formats import TABLE_FIELDS, supplier_in_text, upsert_template, validate_table
 from .models import items_to_df
 from .sizes import DOC_SIZES, SIZE_SYSTEMS, chart_names
 from .storage import DOC_FORMATS, StorageError
@@ -281,7 +281,7 @@ def render_template_form(a: Analysis, key: str, template_name: str = "", templat
         "n° de TVA et domaines e-mail trouvés dans ce PDF — prenez ceux du fournisseur, pas les vôtres.",
     )
     match = c_match.text_input("Texte identifiant", key=f"dbg-match-{key}", placeholder="ex. adidas France") if pick == OTHER else ("" if pick == NONE else pick)
-    if match and match.strip() and match.strip().lower() not in a.text.lower():
+    if match and match.strip() and not supplier_in_text(match, a.text):
         st.caption("⚠️ Ce texte n'apparaît pas dans ce PDF : le fournisseur ne sera pas reconnu automatiquement.")
     c_sys, c_chart = st.columns(2)
     systems = ["FR / EU (aucune conversion)", *SIZE_SYSTEMS]

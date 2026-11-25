@@ -63,6 +63,33 @@ def normalize_label(text: str) -> str:
 _normalize = normalize_label
 
 
+def _squash(text: str) -> str:
+    """Lettres et chiffres seulement, en minuscules : « GB137  5548 50 » -> « gb137554850 »."""
+    return re.sub(r"[^a-z0-9]+", "", unicodedata.normalize("NFKD", str(text)).encode("ascii", "ignore").decode().lower())
+
+
+_FR_VAT_RE = re.compile(r"^fr[0-9a-z]{2}(\d{9})$")
+
+
+def supplier_in_text(match: str, text: str) -> bool:
+    """Le texte identifiant d'un fournisseur (nom, domaine, n° de TVA…) figure-t-il dans ce document ?
+
+    Tolérant à la mise en page des PDF : ponctuation et espaces irréguliers ignorés (« GB137  5548 50 ») ; un n° de TVA
+    coupé sur deux lignes (« FR 55 » … « 403 419 393 ») est retrouvé par son SIREN (les 9 derniers chiffres d'une TVA française).
+    """
+    key = _squash(match)
+    if not key:
+        return False
+    if normalize_label(match) in normalize_label(text):
+        return True
+    squashed = _squash(text)
+    is_identifier = len(key) >= 8 and any(c.isdigit() for c in key)  # n° de TVA, SIREN… ; pas un nom (« adidas France »)
+    if is_identifier and key in squashed:
+        return True
+    fr = _FR_VAT_RE.match(key)
+    return bool(fr and fr.group(1) in squashed)
+
+
 def field_key(text: str) -> Optional[str]:
     """Clé interne d'une colonne à partir de sa clé, de son libellé ou d'un alias ; None si inconnue."""
     return _ALIASES.get(_normalize(text))

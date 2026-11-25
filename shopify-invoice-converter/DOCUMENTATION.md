@@ -349,3 +349,20 @@ pytest -q
 - Avec les JSON locaux sur un hébergement éphémère, les modifications faites via 🛠️ ne survivent pas au redémarrage : utiliser Google Sheets, ou exporter le JSON et le committer.
 - Google Sheets : dernier enregistrement gagnant (pas de verrou entre éditeurs simultanés) ; quota de lecture limité (d'où le cache) ; le champ `_comment` des JSON n'est pas stocké dans le Sheet.
 - Le `storage.py` réel (`GSpreadGateway`) n'est pas couvert par les tests automatiques (qui utilisent une passerelle simulée) : valider la connexion avec votre vrai Sheet.
+
+
+## Annexe — Format des titres et lignes de frais
+- **Titres** : roues `MARQUE Wheels - Nom - DIAMÈTRE - DURETÉ` (ex. `Wallstreet Wheels - Easy Formula - 52MM - 95A`) ; planches `MARQUE Board - Nom - Couleur` (la largeur n'est qu'une variante : deux largeurs = un produit) ; autres `MARQUE - Type - Nom - Couleur`. Le « Type » est le libellé (`label`) du type de produit ; vide = omis.
+- **Tailles** reconnues dans la désignation : lettres, doubles (`S/M`, `JR/XS`…), numériques (vêtements) et pointures `42 EU`.
+- **Lignes de frais** (`Delivery Charge…`, `Shipment`, `Frais de port`…) : ignorées avec une note, jamais importées comme produits (`analysis.drop_non_product_lines`).
+- **Non-régression** : `tests/test_real_invoices.py` relit les vraies factures du dossier « Factures fournisseurs » (ou `INVOICES_DIR`) et vérifie lignes, unités et total HT imprimé.
+
+## Annexe — Aperçu éditable (étape 3)
+
+L'aperçu de l'étape 3 est un tableau éditable (`converter/preview_edit.py`). Les cellules modifiées sont reprises dans le CSV téléchargé.
+
+- **Listes déroulantes issues de la configuration** : Vendor (onglet marques), Type (table Product Type), Tags (collections autorisées + « nouveautés », sélection multiple), Option 1/2 (noms usuels, tailles lettres et tailles FR des tableaux de conversion).
+- **Listes Shopify fixes** : Status, Continue selling, unité de poids, TRUE/FALSE (Published, Charge tax, Requires shipping, Gift card).
+- **Valeurs actuelles toujours proposées** : une valeur détectée mais absente de la configuration reste sélectionnable.
+- **Non modifiable** : `URL handle` (dérivé du titre, partagé par les variantes). Pas d'ajout/suppression de lignes ici : faites-le à l'étape 2.
+- Les modifications sont réinitialisées dès que l'étape 2 change. Le contrôle « produits sans Type » tient compte des Types choisis dans le tableau.
